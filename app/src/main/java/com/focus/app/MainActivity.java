@@ -105,7 +105,8 @@ public class MainActivity extends Activity {
     }
     private void toggleTimer() {
         if (running) {
-            prefs.edit().putBoolean("running", false).apply();
+            long remaining = Math.max(0L, prefs.getLong("end_at", System.currentTimeMillis()) - System.currentTimeMillis());
+            prefs.edit().putBoolean("running", false).putLong("remaining_ms", remaining).apply();
             stopService(new Intent(this, TimerService.class));
             running = false; if (ticker != null) ticker.cancel();
             startButton.setText("استئناف");
