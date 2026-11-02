@@ -74,7 +74,7 @@ public class SettingsActivity extends Activity {
         durations.addView(row1);
         LinearLayout row2=new LinearLayout(this);row2.setOrientation(LinearLayout.HORIZONTAL);
         row2.addView(fieldColumn("مدة الاستراحة الطويلة  ▰","long_minutes",15),new LinearLayout.LayoutParams(0,-2,1));
-        row2.addView(fieldColumn("جلسات قبل الطويلة  ⟳","long_after",4),new LinearLayout.LayoutParams(0,-2,1));
+        row2.addView(fieldColumn("عدد جلسات المذاكرة قبل الاستراحة الطويلة  ⟳","long_after",4),new LinearLayout.LayoutParams(0,-2,1));
         durations.addView(row2);
 
         LinearLayout auto=card(page);
