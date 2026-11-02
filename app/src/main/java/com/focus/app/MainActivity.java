@@ -1,6 +1,7 @@
 package com.focus.app;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -15,7 +16,10 @@ import android.widget.TextView;
 
 import java.util.Locale;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
+    static {
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
+    }
     private static final String PREFS = "focus_prefs";
     private SharedPreferences prefs;
     private TextView phaseText, timerText, quoteText, sessionsText, stateText;
