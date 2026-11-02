@@ -51,11 +51,11 @@ public class SettingsActivity extends Activity {
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.TRANSPARENT);
         LinearLayout page=vertical();page.setPadding(dp(18),dp(12),dp(18),dp(24));scroll.addView(page);root.addView(scroll);
         LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView moon=text("☾",27,"#E5D8FF",false);moon.setGravity(Gravity.CENTER);moon.setBackground(pill("#35436B",18));header.addView(moon,lp(48,48));
+        ImageView moon=new ImageView(this);moon.setImageResource(R.drawable.ic_moon);moon.setPadding(dp(12),dp(12),dp(12),dp(12));moon.setBackground(pill("#35436B",18));header.addView(moon,lp(48,48));
         TextView title=text("الإعدادات",23,"#FFFFFF",true);title.setGravity(Gravity.CENTER);
         header.addView(title,new LinearLayout.LayoutParams(0,dp(48),1));
         TextView save=text("حفظ",16,"#FFFFFF",true);save.setGravity(Gravity.CENTER);save.setBackground(pill("#7056DA",17));header.addView(save,lp(66,46));
-        TextView back=text("‹",30,"#FFFFFF",false);back.setGravity(Gravity.CENTER);back.setBackground(pill("#35436B",17));
+        ImageView back=new ImageView(this);back.setImageResource(R.drawable.ic_back);back.setPadding(dp(10),dp(10),dp(10),dp(10));back.setBackground(pill("#35436B",17));
         LinearLayout.LayoutParams backp=lp(44,46);backp.leftMargin=dp(7);header.addView(back,backp);page.addView(header);
         back.setOnClickListener(v->finish());save.setOnClickListener(v->saveSettings());
 
@@ -81,7 +81,7 @@ public class SettingsActivity extends Activity {
         LinearLayout.LayoutParams asp=lp(-1,49);asp.topMargin=dp(10);alert.addView(addSound,asp);addSound.setOnClickListener(v->pickAudio());
 
         LinearLayout theme=card(page);sectionTitle(theme,"▧   السمة");
-        TextView addImage=text("＋   صورة من الجهاز",14,"#FFFFFF",true);addImage.setGravity(Gravity.CENTER);addImage.setBackground(pill("#6753D1",25));
+        TextView addImage=text("صورة من الجهاز",14,"#FFFFFF",true);addImage.setGravity(Gravity.CENTER);addImage.setCompoundDrawablesWithIntrinsicBounds(getDrawable(R.drawable.ic_add_image),null,null,null);addImage.setBackground(pill("#6753D1",25));
         LinearLayout.LayoutParams aip=lp(145,40);aip.gravity=Gravity.RIGHT;theme.addView(addImage,aip);addImage.setOnClickListener(v->pickImage());
         LinearLayout tiles=new LinearLayout(this);tiles.setOrientation(LinearLayout.HORIZONTAL);
         tiles.addView(themeTile("Morning Sun","Morning Sun.jpg"),new LinearLayout.LayoutParams(0,dp(106),1));
@@ -94,7 +94,9 @@ public class SettingsActivity extends Activity {
         LinearLayout.LayoutParams p=lp(-1,-2);p.topMargin=dp(12);parent.addView(box,p);return box;
     }
     private void sectionTitle(LinearLayout parent,String title){
-        TextView t=text(title,17,"#FFFFFF",true);t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);parent.addView(t,lp(-1,37));
+        TextView t=text(title,17,"#FFFFFF",true);t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        int icon=title.contains("مدة")?R.drawable.ic_clock:title.contains("الانتقال")?R.drawable.ic_transition:title.contains("التنبيه")?R.drawable.ic_bell:R.drawable.ic_image;
+        t.setCompoundDrawablePadding(dp(9));t.setCompoundDrawablesWithIntrinsicBounds(icon,0,0,0);parent.addView(t,lp(-1,37));
     }
     private LinearLayout fieldColumn(String label,String key,int def){
         LinearLayout col=vertical();col.setPadding(dp(3),0,dp(3),0);
