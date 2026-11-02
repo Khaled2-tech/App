@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.*;
 import android.graphics.drawable.*;
 import android.os.Bundle;
+import android.net.Uri;
 import android.os.CountDownTimer;
 import android.view.*;
 import android.widget.*;
@@ -40,6 +41,8 @@ public class MainActivity extends Activity {
         try(InputStream in=getAssets().open("themes/"+name)){Bitmap bitmap=BitmapFactory.decodeStream(in);return new BitmapDrawable(getResources(),bitmap);}catch(Exception e){return null;}
     }
     private Drawable selectedBackground(){
+        String custom=prefs.getString("custom_background_uri",null);
+        if(custom!=null){try(InputStream in=getContentResolver().openInputStream(Uri.parse(custom))){Bitmap b=BitmapFactory.decodeStream(in);if(b!=null)return new BitmapDrawable(getResources(),b);}catch(Exception ignored){}}
         String selected=prefs.getString("selected_theme","Morning Sun");
         String file=selected.equals("Brise Lames")?"Brise Lames.jpg":"Morning Sun.jpg";
         Drawable d=asset(file);if(d instanceof BitmapDrawable)((BitmapDrawable)d).setGravity(Gravity.FILL);
