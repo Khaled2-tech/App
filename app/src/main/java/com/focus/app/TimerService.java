@@ -79,6 +79,6 @@ public class TimerService extends Service {
         if (Build.VERSION.SDK_INT >= 26) return new Notification.Builder(this, CHANNEL).setContentTitle("Focus").setContentText(message).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentIntent(pi).setOngoing(prefs.getBoolean("running", false)).build();
         return new Notification.Builder(this).setContentTitle("Focus").setContentText(message).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentIntent(pi).setOngoing(prefs.getBoolean("running", false)).build();
     }
-    @Override public void onDestroy() { handler.removeCallbacks(tick); handler.removeCallbacks(stopAlarm); super.onDestroy(); }
+    @Override public void onDestroy() { handler.removeCallbacks(tick); super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }
