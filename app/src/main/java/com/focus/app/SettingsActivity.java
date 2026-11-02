@@ -58,7 +58,7 @@ public class SettingsActivity extends Activity {
         header.addView(moon,lp(62,54));
         TextView title=text("الإعدادات",25,"#FFFFFF",true);title.setGravity(Gravity.CENTER);
         header.addView(title,new LinearLayout.LayoutParams(0,dp(56),1));
-        TextView save=text("حفظ",17,"#FFFFFF",true);save.setGravity(Gravity.CENTER);save.setBackground(pill("#6550D8",18));
+        TextView save=text("▣  حفظ",17,"#FFFFFF",true);save.setGravity(Gravity.CENTER);save.setBackground(pill("#6550D8",18));
         header.addView(save,lp(82,54));
         TextView back=text("‹‹",27,"#FFFFFF",true);back.setGravity(Gravity.CENTER);back.setBackground(pill("#27365D",18));
         LinearLayout.LayoutParams backp=lp(56,54);backp.leftMargin=dp(8);header.addView(back,backp);
@@ -84,9 +84,9 @@ public class SettingsActivity extends Activity {
         addSwitch(auto,"من الاستراحة الطويلة إلى المذاكرة","auto_long");
 
         LinearLayout alert=card(page);
-        sectionTitle(alert,"♟   التنبيه");
+        sectionTitle(alert,"♧   التنبيه");
         soundValue=text(prefs.getString("alert_sound_name","اختر نغمة من الجهاز"),16,"#F2F0FF",false);
-        soundValue.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT);soundValue.setPadding(dp(16),0,dp(16),0);
+        soundValue.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT);soundValue.setPadding(dp(16),0,dp(16),0);soundValue.setText("‹   "+soundValue.getText());
         soundValue.setBackground(pill("#39466F",30));
         alert.addView(soundValue,lp(-1,52));
         soundValue.setOnClickListener(v->pickRingtone());
@@ -138,10 +138,10 @@ public class SettingsActivity extends Activity {
     private void addSwitch(LinearLayout parent,String label,String key){
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);
         TextView t=text(label,15,"#F5F2FF",false);t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        row.addView(t,new LinearLayout.LayoutParams(0,dp(48),1));
         Switch sw=new Switch(this);sw.setButtonTintList(ColorStateList.valueOf(c("#9B8BFF")));
         sw.setChecked(prefs.getBoolean(key,true));
         row.addView(sw,lp(64,48));
+        row.addView(t,new LinearLayout.LayoutParams(0,dp(48),1));
         sw.setOnCheckedChangeListener((v,checked)->prefs.edit().putBoolean(key,checked).apply());
         parent.addView(row,lp(-1,50));
     }
