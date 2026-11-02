@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.media.RingtoneManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.*;
@@ -15,7 +13,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 import android.content.res.ColorStateList;
-import java.io.InputStream;
+import com.bumptech.glide.Glide;
 
 public class SettingsActivity extends Activity {
     private SharedPreferences prefs;
@@ -36,16 +34,16 @@ public class SettingsActivity extends Activity {
     }
     private LinearLayout vertical(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);return l;}
     private LinearLayout.LayoutParams lp(int w,int h){return new LinearLayout.LayoutParams(w<0?w:dp(w),h<0?h:dp(h));}
-    private Drawable asset(String name){
-        try(InputStream in=getAssets().open("themes/"+name)){Bitmap b=BitmapFactory.decodeStream(in);return new BitmapDrawable(getResources(),b);}catch(Exception e){return null;}
+    private void loadThemeImage(String file,ImageView target){
+        String assetUri="file:///android_asset/themes/"+Uri.encode(file,"/");
+        Glide.with(this).load(Uri.parse(assetUri)).centerCrop().into(target);
     }
     @Override public void onCreate(Bundle b){
         super.onCreate(b);prefs=getSharedPreferences("focus_prefs",MODE_PRIVATE);
         getWindow().setStatusBarColor(c("#101B3B"));getWindow().setNavigationBarColor(c("#101B3B"));
         FrameLayout root=new FrameLayout(this);
         ImageView wallpaper=new ImageView(this);wallpaper.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        Drawable night=asset("Brise Lames.jpg");
-        if(night!=null)wallpaper.setImageDrawable(night);else wallpaper.setBackgroundColor(c("#172342"));
+        loadThemeImage("Brise Lames.jpg",wallpaper);
         root.addView(wallpaper,new FrameLayout.LayoutParams(-1,-1));
         View shade=new View(this);shade.setBackgroundColor(Color.argb(120,8,17,43));root.addView(shade,new FrameLayout.LayoutParams(-1,-1));
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.TRANSPARENT);
@@ -116,7 +114,7 @@ public class SettingsActivity extends Activity {
     }
     private FrameLayout themeTile(String name,String file){
         FrameLayout tile=new FrameLayout(this);tile.setBackground(pill("#34436B",15));tile.setClipToOutline(true);
-        ImageView image=new ImageView(this);image.setScaleType(ImageView.ScaleType.CENTER_CROP);Drawable d=asset(file);if(d!=null)image.setImageDrawable(d);
+        ImageView image=new ImageView(this);image.setScaleType(ImageView.ScaleType.CENTER_CROP);loadThemeImage(file,image);
         tile.addView(image,new FrameLayout.LayoutParams(-1,-1));
         View scrim=new View(this);scrim.setBackgroundColor(Color.argb(80,0,0,0));tile.addView(scrim,new FrameLayout.LayoutParams(-1,-1));
         TextView caption=text(name,14,"#FFFFFF",true);caption.setGravity(Gravity.CENTER);tile.addView(caption,new FrameLayout.LayoutParams(-1,-1));
