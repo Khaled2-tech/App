@@ -1,6 +1,5 @@
 package com.focus.app;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,7 +15,7 @@ import android.widget.TextView;
 
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends android.app.Activity {
     static {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
     }
