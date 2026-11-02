@@ -1,6 +1,6 @@
 package com.focus.app;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.graphics.Color;
 import android.view.Gravity;
@@ -10,7 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class SettingsActivity extends Activity {
+public class SettingsActivity extends AppCompatActivity {
     private android.content.SharedPreferences prefs;
     private EditText study, shortBreak, longBreak, cycle;
     private int dp(int n) { return (int)(n * getResources().getDisplayMetrics().density + 0.5f); }
