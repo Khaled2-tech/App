@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
     private Button pill(String s,boolean primary){
         Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(17);
         b.setTextColor(c(primary?"#FFFFFF":"#35368C"));
-        b.setBackground(shape(primary?"#C34FC0":"#F9F2FC",40));
+        if(primary){GradientDrawable g=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{c("#E45AAE"),c("#7653D6")});g.setCornerRadius(dp(40));b.setBackground(g);}else{b.setBackground(shape("#F9F2FC",40));}
         return b;
     }
     @Override public void onCreate(Bundle b){
@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
         LinearLayout center=new LinearLayout(this);center.setOrientation(LinearLayout.VERTICAL);center.setGravity(Gravity.CENTER);
         timerText=label("25:00",52,"#34378F");timerText.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));
         center.addView(timerText);
-        TextView total=label("من 25:00",15,"#7779B4");center.addView(total);
+        TextView total=label("من "+String.format(Locale.getDefault(),"%02d:00",duration()),15,"#7779B4");center.addView(total);
         ringFrame.addView(center,new FrameLayout.LayoutParams(-1,-1));
 
         startButton=pill("ابدأ",true);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(dp(268),dp(62));sp.topMargin=dp(4);panel.addView(startButton,sp);
