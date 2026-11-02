@@ -19,6 +19,13 @@ public class TimerService extends Service {
     private static final String CHANNEL = "focus_timer";
     private final Handler handler = new Handler();
     private SharedPreferences prefs;
+    private Ringtone alarm;
+    private final Runnable stopAlarm = new Runnable() {
+        @Override public void run() {
+            try { if (alarm != null && alarm.isPlaying()) alarm.stop(); } catch (Exception ignored) {}
+            alarm = null;
+        }
+    };
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             if (prefs == null || !prefs.getBoolean("running", false)) { stopSelf(); return; }
@@ -40,14 +47,24 @@ public class TimerService extends Service {
         SharedPreferences.Editor e = prefs.edit().putBoolean("running", false).putLong("remaining_ms", 0L);
         if (phase == 0) e.putInt("completed_sessions", prefs.getInt("completed_sessions", 0)+1);
         e.apply();
-        try {
-            Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            Ringtone ring = RingtoneManager.getRingtone(getApplicationContext(), sound);
-            if (ring != null) ring.play();
-        } catch (Exception ignored) {}
+        playAlarm();
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         if (nm != null) nm.notify(11, notification("انتهت الجلسة — أحسنت، خذ لحظة للراحة"));
         stopForeground(true); stopSelf();
+    }
+    private void playAlarm() {
+        try {
+            String custom = prefs.getString("custom_sound_uri", null);
+            String selected = prefs.getString("alert_sound_uri", null);
+            Uri sound = custom != null ? Uri.parse(custom) : selected != null ? Uri.parse(selected) : RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (sound == null) sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            alarm = RingtoneManager.getRingtone(getApplicationContext(), sound);
+            if (alarm != null) {
+                alarm.play();
+                handler.removeCallbacks(stopAlarm);
+                handler.postDelayed(stopAlarm, 60000L);
+            }
+        } catch (Exception ignored) {}
     }
     private void createChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
@@ -62,6 +79,6 @@ public class TimerService extends Service {
         if (Build.VERSION.SDK_INT >= 26) return new Notification.Builder(this, CHANNEL).setContentTitle("Focus").setContentText(message).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentIntent(pi).setOngoing(prefs.getBoolean("running", false)).build();
         return new Notification.Builder(this).setContentTitle("Focus").setContentText(message).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentIntent(pi).setOngoing(prefs.getBoolean("running", false)).build();
     }
-    @Override public void onDestroy() { handler.removeCallbacks(tick); super.onDestroy(); }
+    @Override public void onDestroy() { handler.removeCallbacks(tick); handler.removeCallbacks(stopAlarm); super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }
