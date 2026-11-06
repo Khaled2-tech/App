@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
         phaseText.setTag(phaseIcon);
 
         FrameLayout ringFrame=new FrameLayout(this);
-        int ringSize=Math.min(dp(226),(int)(getResources().getDisplayMetrics().widthPixels*.62f));
+        int ringSize=Math.min(dp(184),(int)(getResources().getDisplayMetrics().widthPixels*.52f));
         LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ringSize,ringSize);rp.topMargin=dp(6);rp.bottomMargin=dp(5);panel.addView(ringFrame,rp);
         timerRing=new TimerRing(this);ringFrame.addView(timerRing,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout center=new LinearLayout(this);center.setOrientation(LinearLayout.VERTICAL);center.setGravity(Gravity.CENTER);
@@ -107,16 +107,17 @@ public class MainActivity extends Activity {
         String[] names={"إنهاء","تخطّي","+ وقت"};
         for(String n:names){
             Button x=pill(n,false);LinearLayout.LayoutParams xp=new LinearLayout.LayoutParams(0,dp(43),1);xp.setMargins(dp(3),dp(8),dp(3),0);controls.addView(x,xp);
-            if(n.equals("+ وقت"))x.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_plus,0,0,0);
+            x.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);
             x.setOnClickListener(v->{if(n.equals("+ وقت"))addFiveMinutes();else if(n.equals("تخطّي"))nextPhase();else finishPeriod();});
         }
-        panel.addView(controls);
+        LinearLayout.LayoutParams controlRowParams=new LinearLayout.LayoutParams(-1,dp(52));
+        controlRowParams.topMargin=dp(2);
+        page.addView(controls,controlRowParams);
 
         LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setGravity(Gravity.CENTER);
         bottom.setPadding(dp(8),dp(4),dp(8),dp(4));bottom.setBackground(shape(Color.argb(116,255,255,255),22));
-        LinearLayout.LayoutParams botp=new LinearLayout.LayoutParams(-1,dp(62));botp.topMargin=dp(8);page.addView(bottom,botp);
-        sessionsText=label("0 / 4 جلسات مكتملة في الدورة",13,"#4746CB");sessionsText.setTypeface(null,android.graphics.Typeface.BOLD);bottom.addView(sessionsText);
-        TextView dots=label("●    ●    ●    ●",14,"#D9BDE6");bottom.addView(dots,new LinearLayout.LayoutParams(-1,dp(19)));
+        LinearLayout.LayoutParams botp=new LinearLayout.LayoutParams(-1,dp(34));botp.topMargin=dp(5);page.addView(bottom,botp);
+        TextView dots=label("●    ●    ●    ●",14,"#D9BDE6");bottom.addView(dots,new LinearLayout.LayoutParams(-1,dp(22)));
         setContentView(root);sync();
     }
     private int duration(){return prefs.getInt(phase==0?"study_minutes":phase==1?"short_minutes":"long_minutes",phase==0?25:phase==1?5:15);}
@@ -157,8 +158,7 @@ public class MainActivity extends Activity {
     private void stopCurrent(){if(running){prefs.edit().putBoolean("running",false).apply();stopService(new Intent(this,TimerService.class));running=false;}if(ticker!=null)ticker.cancel();}
     private void sync(){
         if(phaseText==null)return;phase=prefs.getInt("phase",0);running=prefs.getBoolean("running",false);updatePhaseBadge();
-        int cycle=Math.max(1,prefs.getInt("long_after",4)),done=prefs.getInt("completed_sessions",0);
-        sessionsText.setText((done%cycle)+" / "+cycle+" جلسات مكتملة في الدورة");
+        
         long d=sessionDuration(),left=running?Math.max(0,prefs.getLong("end_at",System.currentTimeMillis())-System.currentTimeMillis()):prefs.getLong("remaining_ms",d);
         if(!running&&left<=0){d=durationFor(phase);left=d;prefs.edit().putLong("session_duration_ms",d).putLong("remaining_ms",d).apply();}
         render(left);startButton.setText(running?"إيقاف مؤقت":"ابدأ");
