@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
         Object source;
         if(custom!=null)source=Uri.parse(custom);
         else {String selected=prefs.getString("selected_theme","Morning Sun");source="file:///android_asset/themes/"+(selected.equals("Brise Lames")?"Brise Lames.jpg":"Morning Sun.jpg");}
-        Glide.with(this).asBitmap().load(source).centerCrop().into(new CustomTarget<Bitmap>(){
+        Glide.with(this).asBitmap().load(source).centerCrop().into(new CustomTarget<Bitmap>(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels){
             @Override public void onResourceReady(Bitmap bitmap,Transition<? super Bitmap> transition){
                 target.setImageBitmap(bitmap);
                 int color=topAverage(bitmap);
@@ -131,7 +131,7 @@ public class MainActivity extends Activity {
         if(running){
             long left=Math.max(0,prefs.getLong("end_at",System.currentTimeMillis())-System.currentTimeMillis());
             prefs.edit().putBoolean("running",false).putLong("remaining_ms",left).apply();stopService(new Intent(this,TimerService.class));
-            running=false;if(ticker!=null)ticker.cancel();startButton.setText("استئناف");updateRing(left);return;
+            running=false;if(ticker!=null)ticker.cancel();startButton.setText("استئناف");startButton.setCompoundDrawablesRelativeWithIntrinsicBounds(0,0,0,0);updateRing(left);return;
         }
         long total=sessionDuration();long left=prefs.getLong("remaining_ms",total);
         if(left<=0||left>total){total=duration()*60000L;left=total;prefs.edit().putLong("session_duration_ms",total).apply();}
