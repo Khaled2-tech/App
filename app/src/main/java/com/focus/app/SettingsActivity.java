@@ -49,7 +49,7 @@ public class SettingsActivity extends Activity {
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.TRANSPARENT);
         LinearLayout page=vertical();page.setPadding(dp(18),dp(12),dp(18),dp(24));scroll.addView(page);root.addView(scroll);
         LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
-        ImageView moon=new ImageView(this);moon.setImageResource(R.drawable.ic_moon);moon.setPadding(dp(12),dp(12),dp(12),dp(12));moon.setBackground(pill("#35436B",18));header.addView(moon,lp(48,48));
+        ImageView settingsIcon=new ImageView(this);settingsIcon.setImageResource(R.drawable.ic_settings);settingsIcon.setPadding(dp(12),dp(12),dp(12),dp(12));settingsIcon.setBackground(pill("#FFFFFF",18));header.addView(settingsIcon,lp(48,48));
         TextView title=text("الإعدادات",23,"#FFFFFF",true);title.setGravity(Gravity.CENTER);
         header.addView(title,new LinearLayout.LayoutParams(0,dp(48),1));
         TextView save=text("حفظ",16,"#FFFFFF",true);save.setGravity(Gravity.CENTER);save.setBackground(pill("#7056DA",17));header.addView(save,lp(66,46));
@@ -148,8 +148,22 @@ public class SettingsActivity extends Activity {
     }
     private void saveSettings(){
         try{int a=valid(study),b=valid(shortBreak),d=valid(longBreak),e=valid(cycle);
-            prefs.edit().putInt("study_minutes",a).putInt("short_minutes",b).putInt("long_minutes",d).putInt("long_after",e).apply();
-            Toast.makeText(this,"تم حفظ الإعدادات",Toast.LENGTH_SHORT).show();finish();
+            int currentPhase=prefs.getInt("phase",0);
+            boolean isRunning=prefs.getBoolean("running",false);
+            long now=System.currentTimeMillis();
+            long oldTotal=prefs.getLong("session_duration_ms",Math.max(1,prefs.getInt(currentPhase==0?"study_minutes":currentPhase==1?"short_minutes":"long_minutes",currentPhase==0?25:currentPhase==1?5:15))*60000L);
+            long oldLeft=isRunning?Math.max(0,prefs.getLong("end_at",now)-now):prefs.getLong("remaining_ms",oldTotal);
+            long elapsed=Math.max(0,oldTotal-oldLeft);
+            long newMinutes=currentPhase==0?a:currentPhase==1?b:d;
+            long newTotal=newMinutes*60000L;
+            long newLeft=Math.max(0,newTotal-elapsed);
+            SharedPreferences.Editor editor=prefs.edit()
+                .putInt("study_minutes",a).putInt("short_minutes",b).putInt("long_minutes",d).putInt("long_after",e)
+                .putLong("session_duration_ms",newTotal).putLong("remaining_ms",newLeft);
+            if(isRunning)editor.putLong("end_at",now+newLeft);
+            editor.apply();
+            if(isRunning){Intent refresh=new Intent(this,TimerService.class);refresh.setAction(TimerService.ACTION_REFRESH);if(android.os.Build.VERSION.SDK_INT>=26)startForegroundService(refresh);else startService(refresh);}
+            Toast.makeText(this,"تم حفظ الإعدادات وتحديث الفترة الحالية",Toast.LENGTH_SHORT).show();finish();
         }catch(Exception ex){Toast.makeText(this,"أدخل أرقامًا صحيحة من 1 إلى 600",Toast.LENGTH_SHORT).show();}
     }
     private int valid(EditText e){int v=Integer.parseInt(e.getText().toString().trim());if(v<1||v>600)throw new IllegalArgumentException();return v;}
