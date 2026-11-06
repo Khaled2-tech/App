@@ -48,7 +48,7 @@ public class SettingsActivity extends Activity {
         View shade=new View(this);shade.setBackgroundColor(Color.argb(120,8,17,43));root.addView(shade,new FrameLayout.LayoutParams(-1,-1));
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.TRANSPARENT);
         LinearLayout page=vertical();page.setPadding(dp(18),dp(12),dp(18),dp(24));scroll.addView(page);root.addView(scroll);
-        LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);header.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         ImageView settingsIcon=new ImageView(this);settingsIcon.setImageResource(R.drawable.ic_settings);settingsIcon.setPadding(dp(12),dp(12),dp(12),dp(12));settingsIcon.setBackground(pill("#FFFFFF",18));header.addView(settingsIcon,lp(48,48));
         TextView title=text("الإعدادات",23,"#FFFFFF",true);title.setGravity(Gravity.CENTER);
         header.addView(title,new LinearLayout.LayoutParams(0,dp(48),1));
