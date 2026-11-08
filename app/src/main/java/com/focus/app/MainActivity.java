@@ -24,6 +24,8 @@ public class MainActivity extends Activity {
     private CountDownTimer ticker;
     private int phase=0;
     private boolean running=false;
+    private Typeface jakartaBold=Typeface.DEFAULT_BOLD,jakartaSemi=Typeface.DEFAULT,cairoMedium=Typeface.DEFAULT,cairoSemi=Typeface.DEFAULT_BOLD;
+    private Typeface loadFont(String name,Typeface fallback){try{return Typeface.createFromAsset(getAssets(),name);}catch(Exception e){return fallback;}}
     private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
     private int c(String s){return Color.parseColor(s);}
     private GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
@@ -65,6 +67,7 @@ public class MainActivity extends Activity {
     private double brightness(int color){return (0.299*Color.red(color)+0.587*Color.green(color)+0.114*Color.blue(color))/255.0;}
     @Override public void onCreate(Bundle b){
         super.onCreate(b);prefs=getSharedPreferences("focus_prefs",MODE_PRIVATE);
+        jakartaBold=loadFont("PlusJakartaSans-Bold.ttf",Typeface.DEFAULT_BOLD);jakartaSemi=loadFont("PlusJakartaSans-SemiBold.ttf",Typeface.DEFAULT);cairoMedium=loadFont("Cairo-Medium.ttf",Typeface.DEFAULT);cairoSemi=loadFont("Cairo-SemiBold.ttf",Typeface.DEFAULT_BOLD);
         FrameLayout root=new FrameLayout(this);
         ImageView wallpaper=new ImageView(this);wallpaper.setScaleType(ImageView.ScaleType.CENTER_CROP);root.addView(wallpaper,new FrameLayout.LayoutParams(-1,-1));loadWallpaper(wallpaper);
         View tint=new View(this);tint.setBackgroundColor(Color.argb(24,255,255,255));root.addView(tint,new FrameLayout.LayoutParams(-1,-1));
@@ -76,7 +79,7 @@ public class MainActivity extends Activity {
         LinearLayout brand=new LinearLayout(this);brand.setGravity(Gravity.CENTER);brand.setOrientation(LinearLayout.HORIZONTAL);
         ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.ic_focus_logo);logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         brand.addView(logo,new LinearLayout.LayoutParams(dp(31),dp(31)));
-        TextView brandText=label("Focus",24,"#4746CB");brandText.setTypeface(android.graphics.Typeface.create("sans-serif",android.graphics.Typeface.BOLD));brand.addView(brandText);
+        TextView brandText=label("Focus",24,"#4746CB");brandText.setTypeface(jakartaSemi);brand.addView(brandText);
         header.addView(brand,new LinearLayout.LayoutParams(0,dp(44),1));
         View rightSpace=new View(this);header.addView(rightSpace,new LinearLayout.LayoutParams(dp(42),dp(42)));page.addView(header);
         settings.setOnClickListener(v->startActivity(new Intent(this,SettingsActivity.class)));
@@ -86,7 +89,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,0,1);pp.topMargin=dp(8);page.addView(panel,pp);
         LinearLayout phaseBadge=new LinearLayout(this);phaseBadge.setGravity(Gravity.CENTER);phaseBadge.setOrientation(LinearLayout.HORIZONTAL);
         phaseBadge.setPadding(dp(13),0,dp(13),0);phaseBadge.setBackground(shape(Color.argb(175,255,255,255),22));
-        phaseText=label("جلسة مذاكرة",14,"#4746CB");phaseText.setTypeface(null,android.graphics.Typeface.BOLD);
+        phaseText=label("جلسة مذاكرة",14,"#4746CB");phaseText.setTypeface(cairoMedium);
         ImageView phaseIcon=new ImageView(this);phaseIcon.setId(android.view.View.generateViewId());phaseIcon.setColorFilter(c("#4746CB"));
         phaseBadge.addView(phaseIcon,new LinearLayout.LayoutParams(dp(19),dp(19)));
         phaseBadge.addView(phaseText,new LinearLayout.LayoutParams(-2,dp(34)));
@@ -98,7 +101,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(ringSize,ringSize);rp.topMargin=dp(6);rp.bottomMargin=dp(5);panel.addView(ringFrame,rp);
         timerRing=new TimerRing(this);ringFrame.addView(timerRing,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout center=new LinearLayout(this);center.setOrientation(LinearLayout.VERTICAL);center.setGravity(Gravity.CENTER);
-        timerText=label("25:00",40,"#4746CB");timerText.setTypeface(android.graphics.Typeface.create("sans-serif",android.graphics.Typeface.BOLD));center.addView(timerText);
+        timerText=label("25:00",40,"#4746CB");timerText.setTypeface(jakartaBold);center.addView(timerText);
         ringFrame.addView(center,new FrameLayout.LayoutParams(-1,-1));
 
         startButton=pill("ابدأ",true);startButton.setTypeface(cairoSemi);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(44));sp.topMargin=dp(1);panel.addView(startButton,sp);
