@@ -59,7 +59,7 @@ public class SettingsActivity extends Activity {
         }
     }
     @Override public void onCreate(Bundle b){
-        super.onCreate(b);prefs=getSharedPreferences("focus_prefs",MODE_PRIVATE);
+        super.onCreate(b);getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);prefs=getSharedPreferences("focus_prefs",MODE_PRIVATE);
         getWindow().setStatusBarColor(c("#14213F"));getWindow().setNavigationBarColor(c("#14213F"));
         FrameLayout root=new FrameLayout(this);
         ImageView wallpaper=new ImageView(this);wallpaper.setScaleType(ImageView.ScaleType.CENTER_CROP);loadWallpaper(wallpaper);
@@ -111,10 +111,11 @@ public class SettingsActivity extends Activity {
         moreThemes.setOnClickListener(v->{expanded=!expanded;renderThemes();moreThemes.setText(expanded?"إظهار أقل   ﹀":"إظهار المزيد   ﹀");});
         renderThemes();
         setContentView(root);
+        study.clearFocus();shortBreak.clearFocus();longBreak.clearFocus();cycle.clearFocus();page.setFocusableInTouchMode(true);page.requestFocus();
     }
     private LinearLayout card(LinearLayout parent){
         LinearLayout box=vertical();box.setPadding(dp(13),dp(9),dp(13),dp(12));
-        box.setBackground(rounded(Color.argb(154,35,48,86),23,1));
+        box.setBackground(rounded(Color.argb(46,255,255,255),20,1));
         LinearLayout.LayoutParams p=lp(-1,-2);p.topMargin=dp(12);parent.addView(box,p);return box;
     }
     private void sectionTitle(LinearLayout parent,String title,int icon){
@@ -155,11 +156,10 @@ public class SettingsActivity extends Activity {
         String name=themeNames[index],file=themeFiles[index];
         FrameLayout tile=new FrameLayout(this);tile.setBackground(rounded(Color.DKGRAY,15,1));tile.setClipToOutline(true);
         ImageView image=new ImageView(this);image.setScaleType(ImageView.ScaleType.CENTER_CROP);loadImage(file,image);tile.addView(image,new FrameLayout.LayoutParams(-1,-1));
-        View scrim=new View(this);scrim.setBackgroundColor(Color.argb(70,0,0,0));tile.addView(scrim,new FrameLayout.LayoutParams(-1,-1));
-        TextView caption=txt(name,13,"#FFFFFF",true);caption.setGravity(Gravity.CENTER);caption.setBackgroundColor(Color.argb(90,0,0,0));
+        TextView caption=txt(name,13,"#FFFFFF",true);caption.setGravity(Gravity.CENTER);caption.setShadowLayer(dp(3),0,dp(1),Color.BLACK);
         FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(-1,dp(29),Gravity.BOTTOM);tile.addView(caption,cp);
         if(name.equals(prefs.getString("selected_theme","Morning Sun"))){View selected=new View(this);GradientDrawable border=rounded(Color.TRANSPARENT,15,1);border.setStroke(dp(2),c("#A991FF"));selected.setBackground(border);tile.addView(selected,new FrameLayout.LayoutParams(-1,-1));}
-        tile.setOnClickListener(v->{prefs.edit().putString("selected_theme",name).remove("custom_background_uri").apply();Toast.makeText(this,"تم اختيار "+name,Toast.LENGTH_SHORT).show();});
+        tile.setOnClickListener(v->{prefs.edit().putString("selected_theme",name).remove("custom_background_uri").apply();renderThemes();sendBroadcast(new Intent("com.focus.app.THEME_CHANGED"));Toast.makeText(this,"تم اختيار "+name,Toast.LENGTH_SHORT).show();});
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(108),1);p.setMargins(dp(3),0,dp(3),0);
         return tile;
     }
@@ -184,7 +184,7 @@ public class SettingsActivity extends Activity {
             try{getContentResolver().takePersistableUriPermission(uri,data.getFlags()&(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION));}catch(Exception ignored){}
             prefs.edit().putString(requestCode==202?"custom_sound_uri":"custom_background_uri",uri.toString()).apply();
             if(requestCode==202){prefs.edit().putString("alert_sound_name","صوت مخصص من الجهاز").apply();soundValue.setText("صوت مخصص من الجهاز");}
-            else Toast.makeText(this,"تم اختيار الصورة؛ ستظهر بعد العودة للشاشة الرئيسية",Toast.LENGTH_SHORT).show();
+            else {sendBroadcast(new Intent("com.focus.app.THEME_CHANGED"));Toast.makeText(this,"تم تحديث الخلفية",Toast.LENGTH_SHORT).show();}
         }}
     }
     private void saveSettings(){
