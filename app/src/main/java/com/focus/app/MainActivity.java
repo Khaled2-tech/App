@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
         timerText=label("25:00",40,"#4746CB");timerText.setTypeface(android.graphics.Typeface.create("sans-serif",android.graphics.Typeface.BOLD));center.addView(timerText);
         ringFrame.addView(center,new FrameLayout.LayoutParams(-1,-1));
 
-        startButton=pill("ابدأ",true);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(44));sp.topMargin=dp(1);panel.addView(startButton,sp);
+        startButton=pill("ابدأ",true);startButton.setTypeface(cairoSemi);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(44));sp.topMargin=dp(1);panel.addView(startButton,sp);
         startButton.setOnClickListener(v->toggleTimer());
         LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER);controls.setOrientation(LinearLayout.HORIZONTAL);controls.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         String[] names={"إنهاء","تخطّي","+ وقت"};
