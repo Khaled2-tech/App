@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
         b.setTypeface(android.graphics.Typeface.create("sans-serif-medium",0));
         b.setTextColor(c(primary?"#FFFFFF":"#4746CB"));
         if(primary){GradientDrawable g=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{c("#E65BAF"),c("#7654D8")});g.setCornerRadius(dp(28));b.setBackground(g);}
-        else b.setBackground(shape(Color.argb(178,255,255,255),20));
+        else {GradientDrawable glass=shape(Color.argb(38,255,255,255),20);glass.setStroke(dp(1),Color.argb(77,139,92,246));b.setBackground(glass);}
         b.setMinHeight(0);b.setMinimumHeight(0);b.setPadding(dp(5),0,dp(5),0);
         if(android.os.Build.VERSION.SDK_INT>=21)b.setElevation(dp(1));
         return b;
@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
         View tint=new View(this);tint.setBackgroundColor(Color.argb(24,255,255,255));root.addView(tint,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(18),dp(5),dp(18),dp(9));
         root.addView(page,new FrameLayout.LayoutParams(-1,-1));
-        LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);header.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         ImageView settings=new ImageView(this);settings.setImageResource(R.drawable.ic_settings);settings.setPadding(dp(10),dp(10),dp(10),dp(10));settings.setBackground(shape(Color.argb(145,255,255,255),50));
         header.addView(settings,new LinearLayout.LayoutParams(dp(42),dp(42)));
         LinearLayout brand=new LinearLayout(this);brand.setGravity(Gravity.CENTER);brand.setOrientation(LinearLayout.HORIZONTAL);
