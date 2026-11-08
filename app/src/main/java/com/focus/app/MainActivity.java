@@ -28,8 +28,6 @@ public class MainActivity extends Activity {
     private LinearLayout progressDots;
     private Typeface jakartaBold=Typeface.DEFAULT_BOLD,jakartaSemi=Typeface.DEFAULT,cairoMedium=Typeface.DEFAULT,cairoSemi=Typeface.DEFAULT_BOLD;
     private Typeface loadFont(String name,Typeface fallback){try{return Typeface.createFromAsset(getAssets(),name);}catch(Exception e){return fallback;}}
-    private Typeface jakartaBold=Typeface.DEFAULT_BOLD,jakartaSemi=Typeface.DEFAULT,cairoMedium=Typeface.DEFAULT,cairoSemi=Typeface.DEFAULT_BOLD;
-    private Typeface loadFont(String name,Typeface fallback){try{return Typeface.createFromAsset(getAssets(),name);}catch(Exception e){return fallback;}}
     private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
     private int c(String s){return Color.parseColor(s);}
     private GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
@@ -96,10 +94,10 @@ public class MainActivity extends Activity {
         settings.setOnClickListener(v->startActivity(new Intent(this,SettingsActivity.class)));
 
         LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setGravity(Gravity.CENTER_HORIZONTAL);
-        panel.setPadding(dp(14),dp(12),dp(14),dp(10));panel.setBackground(shape(Color.argb(116,255,255,255),27));
+        panel.setPadding(dp(14),dp(12),dp(14),dp(10));panel.setBackground(shape(Color.argb(46,255,255,255),20));
         LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,0,1);pp.topMargin=dp(8);page.addView(panel,pp);
         LinearLayout phaseBadge=new LinearLayout(this);phaseBadge.setGravity(Gravity.CENTER);phaseBadge.setOrientation(LinearLayout.HORIZONTAL);
-        phaseBadge.setPadding(dp(13),0,dp(13),0);phaseBadge.setBackground(shape(Color.argb(175,255,255,255),22));
+        phaseBadge.setPadding(dp(13),0,dp(13),0);phaseBadge.setBackground(shape(Color.argb(46,255,255,255),20));
         phaseText=label("جلسة مذاكرة",14,"#4746CB");phaseText.setTypeface(cairoMedium);
         ImageView phaseIcon=new ImageView(this);phaseIcon.setId(android.view.View.generateViewId());phaseIcon.setColorFilter(c("#4746CB"));
         phaseBadge.addView(phaseIcon,new LinearLayout.LayoutParams(dp(19),dp(19)));
