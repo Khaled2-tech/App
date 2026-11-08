@@ -24,6 +24,10 @@ public class MainActivity extends Activity {
     private CountDownTimer ticker;
     private int phase=0;
     private boolean running=false;
+    private ImageView wallpaper;
+    private LinearLayout progressDots;
+    private Typeface jakartaBold=Typeface.DEFAULT_BOLD,jakartaSemi=Typeface.DEFAULT,cairoMedium=Typeface.DEFAULT,cairoSemi=Typeface.DEFAULT_BOLD;
+    private Typeface loadFont(String name,Typeface fallback){try{return Typeface.createFromAsset(getAssets(),name);}catch(Exception e){return fallback;}}
     private Typeface jakartaBold=Typeface.DEFAULT_BOLD,jakartaSemi=Typeface.DEFAULT,cairoMedium=Typeface.DEFAULT,cairoSemi=Typeface.DEFAULT_BOLD;
     private Typeface loadFont(String name,Typeface fallback){try{return Typeface.createFromAsset(getAssets(),name);}catch(Exception e){return fallback;}}
     private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
@@ -44,7 +48,13 @@ public class MainActivity extends Activity {
         String custom=prefs.getString("custom_background_uri",null);
         Object source;
         if(custom!=null)source=Uri.parse(custom);
-        else {String selected=prefs.getString("selected_theme","Morning Sun");source="file:///android_asset/themes/"+(selected.equals("Brise Lames")?"Brise Lames.jpg":"Morning Sun.jpg");}
+        else {
+            String selected=prefs.getString("selected_theme","Morning Sun");
+            String[] names={"Morning Sun","Brise Lames","BioGlow","Deep Forst","Mountain Village","Twilight Fuji","Golden Glow","Pink Clouds","Cozy Corner","Night City"};
+            String[] files={"Morning Sun.jpg","Brise Lames.jpg","BioGlow.jpg","Deep Forst.png","Mountain Village.jpg","Twilight Fuji.png","Golden Glow.jpg","Pink Clouds.jpg","Cozy Corner.jpg","Night City.jpg"};
+            String file="Morning Sun.jpg";for(int i=0;i<names.length;i++)if(names[i].equals(selected)){file=files[i];break;}
+            source="file:///android_asset/themes/"+Uri.encode(file,"/");
+        }
         Glide.with(this).asBitmap().load(source).centerCrop().into(new CustomTarget<Bitmap>(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels){
             @Override public void onResourceReady(Bitmap bitmap,Transition<? super Bitmap> transition){
                 target.setImageBitmap(bitmap);
@@ -68,8 +78,9 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle b){
         super.onCreate(b);prefs=getSharedPreferences("focus_prefs",MODE_PRIVATE);
         jakartaBold=loadFont("PlusJakartaSans-Bold.ttf",Typeface.DEFAULT_BOLD);jakartaSemi=loadFont("PlusJakartaSans-SemiBold.ttf",Typeface.DEFAULT);cairoMedium=loadFont("Cairo-Medium.ttf",Typeface.DEFAULT);cairoSemi=loadFont("Cairo-SemiBold.ttf",Typeface.DEFAULT_BOLD);
+        jakartaBold=loadFont("PlusJakartaSans-Bold.ttf",Typeface.DEFAULT_BOLD);jakartaSemi=loadFont("PlusJakartaSans-SemiBold.ttf",Typeface.DEFAULT);cairoMedium=loadFont("Cairo-Medium.ttf",Typeface.DEFAULT);cairoSemi=loadFont("Cairo-SemiBold.ttf",Typeface.DEFAULT_BOLD);
         FrameLayout root=new FrameLayout(this);
-        ImageView wallpaper=new ImageView(this);wallpaper.setScaleType(ImageView.ScaleType.CENTER_CROP);root.addView(wallpaper,new FrameLayout.LayoutParams(-1,-1));loadWallpaper(wallpaper);
+        wallpaper=new ImageView(this);wallpaper.setScaleType(ImageView.ScaleType.CENTER_CROP);root.addView(wallpaper,new FrameLayout.LayoutParams(-1,-1));loadWallpaper(wallpaper);
         View tint=new View(this);tint.setBackgroundColor(Color.argb(24,255,255,255));root.addView(tint,new FrameLayout.LayoutParams(-1,-1));
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(18),dp(5),dp(18),dp(9));
         root.addView(page,new FrameLayout.LayoutParams(-1,-1));
@@ -106,21 +117,20 @@ public class MainActivity extends Activity {
 
         startButton=pill("ابدأ",true);startButton.setTypeface(cairoSemi);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(44));sp.topMargin=dp(1);panel.addView(startButton,sp);
         startButton.setOnClickListener(v->toggleTimer());
-        LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER);controls.setOrientation(LinearLayout.HORIZONTAL);controls.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        String[] names={"إنهاء","تخطّي","+ وقت"};
+        LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER);controls.setOrientation(LinearLayout.HORIZONTAL);controls.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        String[] names={"+ وقت","تخطّي","إنهاء"};
         for(String n:names){
-            Button x=pill(n,false);LinearLayout.LayoutParams xp=new LinearLayout.LayoutParams(0,dp(43),1);xp.setMargins(dp(3),dp(8),dp(3),0);controls.addView(x,xp);
-            x.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);
+            Button x=pill(n,false);x.setTypeface(cairoMedium);LinearLayout.LayoutParams xp=new LinearLayout.LayoutParams(0,dp(40),1);xp.setMargins(dp(3),dp(5),dp(3),dp(2));controls.addView(x,xp);
+            if(n.equals("تخطّي"))x.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_skip,0,0,0);
+            if(n.equals("إنهاء"))x.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_finish,0,0,0);
             x.setOnClickListener(v->{if(n.equals("+ وقت"))addFiveMinutes();else if(n.equals("تخطّي"))nextPhase();else finishPeriod();});
         }
-        LinearLayout.LayoutParams controlRowParams=new LinearLayout.LayoutParams(-1,dp(52));
-        controlRowParams.topMargin=dp(2);
-        page.addView(controls,controlRowParams);
-
-        LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setGravity(Gravity.CENTER);
-        bottom.setPadding(dp(8),dp(4),dp(8),dp(4));bottom.setBackground(shape(Color.argb(116,255,255,255),22));
-        LinearLayout.LayoutParams botp=new LinearLayout.LayoutParams(-1,dp(34));botp.topMargin=dp(5);page.addView(bottom,botp);
-        TextView dots=label("●    ●    ●    ●",14,"#D9BDE6");bottom.addView(dots,new LinearLayout.LayoutParams(-1,dp(22)));
+        panel.addView(controls,new LinearLayout.LayoutParams(-1,dp(48)));
+        LinearLayout bottom=new LinearLayout(this);bottom.setOrientation(LinearLayout.VERTICAL);bottom.setGravity(Gravity.CENTER_VERTICAL);
+        bottom.setPadding(dp(10),dp(3),dp(10),dp(3));bottom.setBackground(shape(Color.argb(38,255,255,255),20));
+        LinearLayout.LayoutParams botp=new LinearLayout.LayoutParams(-1,dp(48));botp.topMargin=dp(5);page.addView(bottom,botp);
+        TextView completed=label("جلسات المذاكرة المكتملة",12,"#4746CB");completed.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);completed.setTypeface(cairoMedium);bottom.addView(completed,new LinearLayout.LayoutParams(-1,dp(19)));
+        progressDots=new LinearLayout(this);progressDots.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);progressDots.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);bottom.addView(progressDots,new LinearLayout.LayoutParams(-1,dp(21)));renderProgressDots();
         setContentView(root);sync();
     }
     private int duration(){return prefs.getInt(phase==0?"study_minutes":phase==1?"short_minutes":"long_minutes",phase==0?25:phase==1?5:15);}
@@ -164,7 +174,7 @@ public class MainActivity extends Activity {
         
         long d=sessionDuration(),left=running?Math.max(0,prefs.getLong("end_at",System.currentTimeMillis())-System.currentTimeMillis()):prefs.getLong("remaining_ms",d);
         if(!running&&left<=0){d=durationFor(phase);left=d;prefs.edit().putLong("session_duration_ms",d).putLong("remaining_ms",d).apply();}
-        render(left);startButton.setText(running?"إيقاف مؤقت":"ابدأ");
+        render(left);renderProgressDots();startButton.setText(running?"إيقاف مؤقت":"ابدأ");
         startButton.setCompoundDrawablesRelativeWithIntrinsicBounds(running?R.drawable.ic_pause:0,0,0,0);
         updateRing(left);if(running)startTicker();
     }
@@ -174,7 +184,13 @@ public class MainActivity extends Activity {
         if(ticker!=null)ticker.cancel();long left=Math.max(0,prefs.getLong("end_at",System.currentTimeMillis())-System.currentTimeMillis());
         ticker=new CountDownTimer(left,250){public void onTick(long m){render(m);updateRing(m);}public void onFinish(){sync();}}.start();
     }
-    @Override protected void onResume(){super.onResume();if(prefs!=null&&phaseText!=null)sync();}
+    private void renderProgressDots(){
+        if(progressDots==null)return;progressDots.removeAllViews();
+        int total=Math.max(1,Math.min(20,prefs.getInt("long_after",4)));
+        int done=prefs.getInt("completed_sessions",0)%total;
+        for(int i=0;i<total;i++){View dot=new View(this);dot.setBackground(shape(i<done?Color.argb(204,229,150,209):Color.argb(102,229,150,209),20));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(7),dp(7));p.setMargins(dp(3),0,dp(3),0);progressDots.addView(dot,p);}
+    }
+    @Override protected void onResume(){super.onResume();if(prefs!=null&&phaseText!=null){loadWallpaper(wallpaper);sync();}}
     @Override protected void onDestroy(){if(ticker!=null)ticker.cancel();super.onDestroy();}
     private class TimerRing extends View{
         Paint p=new Paint(3);float fraction=1f;
@@ -183,9 +199,9 @@ public class MainActivity extends Activity {
         protected void onDraw(Canvas canvas){
             super.onDraw(canvas);float w=getWidth(),h=getHeight(),r=Math.min(w,h)*.43f;
             p.setShader(null);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(8));p.setStrokeCap(Paint.Cap.ROUND);
-            p.setColor(Color.argb(115,255,255,255));canvas.drawCircle(w/2,h/2,r,p);
-            p.setShader(new LinearGradient(w*.2f,h*.2f,w*.8f,h*.8f,Color.parseColor("#D04FBA"),Color.parseColor("#6755C9"),Shader.TileMode.CLAMP));
-            canvas.drawArc(w/2-r,h/2-r,w/2+r,h/2+r,-90,-360*fraction,false,p);p.setShader(null);
+            p.setColor(Color.argb(25,226,133,159));canvas.drawCircle(w/2,h/2,r,p);
+            p.setShader(new SweepGradient(w/2,h/2,new int[]{Color.parseColor("#4746CB"),Color.parseColor("#766BE0"),Color.parseColor("#E596D1"),Color.parseColor("#4746CB")},new float[]{0f,.45f,.88f,1f}));
+            canvas.save();canvas.rotate(-90,w/2,h/2);canvas.drawArc(w/2-r,h/2-r,w/2+r,h/2+r,0,-360*fraction,false,p);canvas.restore();p.setShader(null);
         }
     }
 }
