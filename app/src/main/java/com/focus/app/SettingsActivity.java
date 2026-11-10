@@ -70,15 +70,15 @@ public class SettingsActivity extends Activity {
         return new RequestOptions().format(DecodeFormat.PREFER_RGB_565).centerCrop().override(Math.max(1, w), Math.max(1, h));
     }
     private void loadImage(String file, ImageView target) {
-        Glide.with(this).apply(decoded(dp(240), dp(140)))
-                .load(Uri.parse("file:///android_asset/themes/" + Uri.encode(file, "/")))
+        Glide.with(this).load(Uri.parse("file:///android_asset/themes/" + Uri.encode(file, "/")))
+                .apply(decoded(dp(240), dp(140)))
                 .into(target);
     }
     private void loadWallpaper(ImageView target) {
         DisplayMetrics dm = getResources().getDisplayMetrics();
         String custom = prefs.getString("custom_background_uri", null);
         Object source = custom != null ? Uri.parse(custom) : Uri.parse("file:///android_asset/themes/" + Uri.encode(MainActivity.fileFor(prefs.getString("selected_theme", "Morning Sun")), "/"));
-        Glide.with(this).apply(decoded(dm.widthPixels, dm.heightPixels)).load(source).into(target);
+        Glide.with(this).load(source).apply(decoded(dm.widthPixels, dm.heightPixels)).into(target);
     }
 
     @Override public void onCreate(Bundle b) {
