@@ -180,6 +180,8 @@ public class SettingsActivity extends Activity {
         theme.addView(themeGrid, gp);
         moreThemes = txt("إظهار المزيد", 16, "#FFFFFF", true);
         moreThemes.setGravity(Gravity.CENTER);
+        moreThemes.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_chevron_down, 0);
+        moreThemes.setCompoundDrawablePadding(dp(8));
         moreThemes.setBackground(rounded(c("#6252D0"), 26, 0));
         LinearLayout.LayoutParams mp = lp(-1, 46);
         mp.topMargin = dp(10);
