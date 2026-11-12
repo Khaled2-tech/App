@@ -104,7 +104,7 @@ public class MainActivity extends Activity {
         String custom = prefs.getString("custom_background_uri", null);
         Object source;
         if (custom != null) source = Uri.parse(custom);
-        else source = Uri.parse("file:///android_asset/themes/" + Uri.encode(fileFor(prefs.getString("selected_theme", "Morning Sun")), "/"));
+        else source = Uri.parse("file:///android_asset/themes/" + fileFor(prefs.getString("selected_theme", "Morning Sun")));
         int w = Math.max(1, getResources().getDisplayMetrics().widthPixels);
         int h = Math.max(1, getResources().getDisplayMetrics().heightPixels);
         Glide.with(this).asBitmap()
