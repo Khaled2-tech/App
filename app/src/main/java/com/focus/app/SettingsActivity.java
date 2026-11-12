@@ -159,14 +159,26 @@ public class SettingsActivity extends Activity {
         addSound.setOnClickListener(v -> pickAudio());
 
         LinearLayout theme = card(page);
-        sectionTitle(theme, "السمة", R.drawable.ic_image);
+        LinearLayout themeHeader = horizontal();
+        themeHeader.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        themeHeader.setGravity(Gravity.CENTER_VERTICAL);
         TextView addImage = txt("＋  صورة من الجهاز", 14, "#FFFFFF", true);
         addImage.setGravity(Gravity.CENTER);
-        addImage.setBackground(rounded(c("#6252D0"), 24, 0));
-        LinearLayout.LayoutParams aip = lp(150, 40);
-        aip.gravity = Gravity.LEFT;
-        theme.addView(addImage, aip);
+        addImage.setBackground(rounded(c("#6252D0"), 20, 0));
+        themeHeader.addView(addImage, lp(145, 38));
         addImage.setOnClickListener(v -> pickImage());
+        View themeSpacer = new View(this);
+        themeHeader.addView(themeSpacer, new LinearLayout.LayoutParams(0, 0, 1));
+        TextView themeTitle = txt("السمة", compact ? 16 : 18, "#FFFFFF", true);
+        themeTitle.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        themeHeader.addView(themeTitle);
+        ImageView themeIcon = new ImageView(this);
+        themeIcon.setImageResource(R.drawable.ic_image);
+        themeIcon.setColorFilter(c("#A88BFF"));
+        LinearLayout.LayoutParams tip = lp(24, 24);
+        tip.leftMargin = dp(8);
+        themeHeader.addView(themeIcon, tip);
+        theme.addView(themeHeader, lp(-1, 40));
         themeGrid = vertical();
         LinearLayout.LayoutParams gp = lp(-1, -2);
         gp.topMargin = dp(8);
@@ -205,6 +217,7 @@ public class SettingsActivity extends Activity {
     }
     private void sectionTitle(LinearLayout parent, String title, int icon) {
         LinearLayout row = horizontal();
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         row.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         TextView t = txt(title, compact ? 16 : 18, "#FFFFFF", true);
         t.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
@@ -221,6 +234,7 @@ public class SettingsActivity extends Activity {
         LinearLayout col = vertical();
         col.setPadding(dp(3), dp(2), dp(3), dp(4));
         LinearLayout heading = horizontal();
+        heading.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         heading.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         TextView t = txt(label, compact ? 11 : 13, "#F1EFFF", false);
         t.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
@@ -229,7 +243,9 @@ public class SettingsActivity extends Activity {
         ImageView im = new ImageView(this);
         im.setImageResource(icon);
         im.setColorFilter(c("#B39AFF"));
-        heading.addView(im, lp(20, 20));
+        LinearLayout.LayoutParams ip = lp(20, 20);
+        ip.leftMargin = dp(6);
+        heading.addView(im, ip);
         col.addView(heading);
         int initial = prefs.getInt(key, def);
         FrameLayout box = new FrameLayout(this);
@@ -279,7 +295,14 @@ public class SettingsActivity extends Activity {
         LinearLayout row = horizontal();
         row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         Switch sw = new Switch(this);
-        sw.setButtonTintList(ColorStateList.valueOf(c("#A99AFF")));
+        int[][] states = new int[][] {
+            new int[] { android.R.attr.state_checked },
+            new int[] {}
+        };
+        int[] thumbColors = new int[] { c("#5146D8"), Color.LTGRAY };
+        int[] trackColors = new int[] { Color.argb(128, 81, 70, 216), Color.argb(60, 255, 255, 255) };
+        sw.setThumbTintList(new ColorStateList(states, thumbColors));
+        sw.setTrackTintList(new ColorStateList(states, trackColors));
         sw.setChecked(prefs.getBoolean(key, true));
         row.addView(sw, lp(52, 44));
         TextView t = txt(label, compact ? 12 : 14, "#F5F2FF", false);
@@ -288,7 +311,9 @@ public class SettingsActivity extends Activity {
         ImageView icon = new ImageView(this);
         icon.setImageResource(R.drawable.ic_transition);
         icon.setColorFilter(c("#B39AFF"));
-        row.addView(icon, lp(22, 22));
+        LinearLayout.LayoutParams ip = lp(22, 22);
+        ip.leftMargin = dp(8);
+        row.addView(icon, ip);
         sw.setOnCheckedChangeListener((v, checked) -> prefs.edit().putBoolean(key, checked).apply());
         parent.addView(row, lp(-1, 46));
     }
