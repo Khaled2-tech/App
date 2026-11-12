@@ -70,14 +70,14 @@ public class SettingsActivity extends Activity {
         return new RequestOptions().format(DecodeFormat.PREFER_RGB_565).centerCrop().override(Math.max(1, w), Math.max(1, h));
     }
     private void loadImage(String file, ImageView target) {
-        Glide.with(this).load(Uri.parse("file:///android_asset/themes/" + Uri.encode(file, "/")))
+        Glide.with(this).load(Uri.parse("file:///android_asset/themes/" + file))
                 .apply(decoded(dp(240), dp(140)))
                 .into(target);
     }
     private void loadWallpaper(ImageView target) {
         DisplayMetrics dm = getResources().getDisplayMetrics();
         String custom = prefs.getString("custom_background_uri", null);
-        Object source = custom != null ? Uri.parse(custom) : Uri.parse("file:///android_asset/themes/" + Uri.encode(MainActivity.fileFor(prefs.getString("selected_theme", "Morning Sun")), "/"));
+        Object source = custom != null ? Uri.parse(custom) : Uri.parse("file:///android_asset/themes/" + MainActivity.fileFor(prefs.getString("selected_theme", "Morning Sun")));
         Glide.with(this).load(source).apply(decoded(dm.widthPixels, dm.heightPixels)).into(target);
     }
 
@@ -305,8 +305,14 @@ public class SettingsActivity extends Activity {
         int tileH = compact ? 92 : 108;
         for (int i = 0; i < count; i += 2) {
             LinearLayout row = horizontal();
-            row.addView(themeTile(i, tileH), new LinearLayout.LayoutParams(0, dp(tileH), 1));
-            if (i + 1 < count) row.addView(themeTile(i + 1, tileH), new LinearLayout.LayoutParams(0, dp(tileH), 1));
+            LinearLayout.LayoutParams p1 = new LinearLayout.LayoutParams(0, dp(tileH), 1);
+            p1.setMargins(dp(3), 0, dp(3), 0);
+            row.addView(themeTile(i, tileH), p1);
+            if (i + 1 < count) {
+                LinearLayout.LayoutParams p2 = new LinearLayout.LayoutParams(0, dp(tileH), 1);
+                p2.setMargins(dp(3), 0, dp(3), 0);
+                row.addView(themeTile(i + 1, tileH), p2);
+            }
             LinearLayout.LayoutParams rp = lp(-1, tileH);
             rp.topMargin = dp(6);
             themeGrid.addView(row, rp);
