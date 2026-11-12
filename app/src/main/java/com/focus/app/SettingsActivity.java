@@ -108,28 +108,21 @@ public class SettingsActivity extends Activity {
 
         LinearLayout header = horizontal();
         header.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        TextView moon = txt("☾", 28, "#C7B5FF", true);
-        moon.setGravity(Gravity.CENTER);
-        moon.setBackground(rounded(Color.argb(90, 255, 255, 255), 18, 1));
-        header.addView(moon, lp(48, 46));
-        TextView title = txt("الإعدادات", compact ? 20 : 24, "#FFFFFF", true);
-        title.setGravity(Gravity.CENTER);
-        header.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1));
         TextView save = txt("حفظ", 16, "#FFFFFF", true);
         save.setGravity(Gravity.CENTER);
         save.setBackground(rounded(c("#5146D8"), 17, 0));
         header.addView(save, lp(64, 46));
+        TextView title = txt("الإعدادات", compact ? 20 : 24, "#FFFFFF", true);
+        title.setGravity(Gravity.CENTER);
+        header.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1));
         ImageView back = new ImageView(this);
-        back.setImageResource(R.drawable.ic_back);
+        back.setImageResource(R.drawable.ic_chevron_left);
         back.setPadding(dp(10), dp(10), dp(10), dp(10));
         back.setBackground(rounded(Color.argb(95, 255, 255, 255), 17, 1));
-        LinearLayout.LayoutParams bp = lp(44, 46);
-        bp.leftMargin = dp(7);
-        header.addView(back, bp);
+        header.addView(back, lp(44, 46));
         page.addView(header);
         save.setOnClickListener(v -> saveSettings());
         back.setOnClickListener(v -> finish());
-        moon.setOnClickListener(v -> Toast.makeText(this, "يتبع التطبيق مظهره الحالي", Toast.LENGTH_SHORT).show());
 
         LinearLayout durations = card(page);
         sectionTitle(durations, "مدة الفترات", R.drawable.ic_clock);
@@ -180,7 +173,7 @@ public class SettingsActivity extends Activity {
         theme.addView(themeGrid, gp);
         moreThemes = txt("إظهار المزيد", 16, "#FFFFFF", true);
         moreThemes.setGravity(Gravity.CENTER);
-        moreThemes.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_chevron_down, 0);
+        moreThemes.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_chevron_down, 0, 0, 0);
         moreThemes.setCompoundDrawablePadding(dp(8));
         moreThemes.setBackground(rounded(c("#6252D0"), 26, 0));
         LinearLayout.LayoutParams mp = lp(-1, 46);
