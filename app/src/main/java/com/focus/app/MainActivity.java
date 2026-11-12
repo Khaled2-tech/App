@@ -203,7 +203,6 @@ public class MainActivity extends Activity {
         ImageView settings = new ImageView(this);
         settings.setImageResource(R.drawable.ic_settings);
         settings.setPadding(dp(10), dp(10), dp(10), dp(10));
-        settings.setBackground(shape(Color.argb(230, 255, 255, 255), 50));
         settings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         header.addView(settings, new LinearLayout.LayoutParams(dp(42), dp(42)));
         page.addView(header);
