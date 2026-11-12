@@ -106,21 +106,31 @@ public class SettingsActivity extends Activity {
         scroll.addView(page);
         root.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
 
-        LinearLayout header = horizontal();
+        FrameLayout header = new FrameLayout(this);
         header.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+
+        TextView title = txt("الإعدادات", compact ? 22 : 26, "#FFFFFF", true);
+        title.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams titleLp = new FrameLayout.LayoutParams(-2, -2);
+        titleLp.gravity = Gravity.CENTER;
+        header.addView(title, titleLp);
+
         TextView save = txt("حفظ", 16, "#FFFFFF", true);
         save.setGravity(Gravity.CENTER);
         save.setBackground(rounded(c("#5146D8"), 17, 0));
-        header.addView(save, lp(64, 46));
-        TextView title = txt("الإعدادات", compact ? 20 : 24, "#FFFFFF", true);
-        title.setGravity(Gravity.CENTER);
-        header.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1));
+        FrameLayout.LayoutParams saveLp = new FrameLayout.LayoutParams(dp(64), dp(46));
+        saveLp.gravity = Gravity.LEFT | Gravity.CENTER_VERTICAL;
+        header.addView(save, saveLp);
+
         ImageView back = new ImageView(this);
         back.setImageResource(R.drawable.ic_chevron_left);
         back.setPadding(dp(10), dp(10), dp(10), dp(10));
         back.setBackground(rounded(Color.argb(95, 255, 255, 255), 17, 1));
-        header.addView(back, lp(44, 46));
-        page.addView(header);
+        FrameLayout.LayoutParams backLp = new FrameLayout.LayoutParams(dp(44), dp(46));
+        backLp.gravity = Gravity.RIGHT | Gravity.CENTER_VERTICAL;
+        header.addView(back, backLp);
+
+        page.addView(header, new LinearLayout.LayoutParams(-1, dp(46)));
         save.setOnClickListener(v -> saveSettings());
         back.setOnClickListener(v -> finish());
 
