@@ -24,6 +24,8 @@ import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.List;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.request.RequestOptions;
@@ -33,6 +35,7 @@ public class SettingsActivity extends Activity {
     private EditText study, shortBreak, longBreak, cycle;
     private TextView soundValue, moreThemes;
     private LinearLayout themeGrid;
+    private ImageView wallpaper;
     private boolean expanded;
     private boolean compact;
     private final String[] themeNames = {
@@ -51,6 +54,17 @@ public class SettingsActivity extends Activity {
         d.setColor(color);
         d.setCornerRadius(dp(radius));
         if (stroke > 0) d.setStroke(dp(1), Color.argb(105, 205, 194, 255));
+        return d;
+    }
+    private GradientDrawable roundedPart(int color, boolean isRight) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(color);
+        float r = dp(14);
+        if (isRight) {
+            d.setCornerRadii(new float[]{0, 0, r, r, r, r, 0, 0});
+        } else {
+            d.setCornerRadii(new float[]{r, r, 0, 0, 0, 0, r, r});
+        }
         return d;
     }
     private TextView txt(String value, int size, String color, boolean bold) {
@@ -74,11 +88,12 @@ public class SettingsActivity extends Activity {
                 .apply(decoded(dp(240), dp(140)))
                 .into(target);
     }
-    private void loadWallpaper(ImageView target) {
+    private void loadWallpaper() {
+        if (wallpaper == null || prefs == null) return;
         DisplayMetrics dm = getResources().getDisplayMetrics();
         String custom = prefs.getString("custom_background_uri", null);
         Object source = custom != null ? Uri.parse(custom) : Uri.parse("file:///android_asset/themes/" + MainActivity.fileFor(prefs.getString("selected_theme", "Morning Sun")));
-        Glide.with(this).load(source).apply(decoded(dm.widthPixels, dm.heightPixels)).into(target);
+        Glide.with(this).load(source).apply(decoded(dm.widthPixels, dm.heightPixels)).into(wallpaper);
     }
 
     @Override public void onCreate(Bundle b) {
@@ -92,9 +107,9 @@ public class SettingsActivity extends Activity {
             getWindow().setNavigationBarColor(c("#14213F"));
         }
         FrameLayout root = new FrameLayout(this);
-        ImageView wallpaper = new ImageView(this);
+        wallpaper = new ImageView(this);
         wallpaper.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        loadWallpaper(wallpaper);
+        loadWallpaper();
         root.addView(wallpaper, new FrameLayout.LayoutParams(-1, -1));
         View shade = new View(this);
         shade.setBackgroundColor(Color.argb(150, 8, 17, 43));
@@ -141,7 +156,8 @@ public class SettingsActivity extends Activity {
         r1.addView(fieldColumn("مدة الاستراحة القصيرة", "short_minutes", 5, R.drawable.ic_coffee, true), new LinearLayout.LayoutParams(0, -2, 1));
         durations.addView(r1);
         LinearLayout r2 = horizontal();
-        r2.addView(fieldColumn("عدد جلسات المذاكرة قبل الاستراحة الطويلة", "long_after", 4, R.drawable.ic_sessions_cycle, false), new LinearLayout.LayoutParams(0, -2, 1));
+        r2.addView(fieldColumn("عدد جلسات المذاكرة
+قبل الاستراحة الطويلة", "long_after", 4, R.drawable.ic_sessions_cycle, false), new LinearLayout.LayoutParams(0, -2, 1));
         r2.addView(fieldColumn("مدة الاستراحة الطويلة", "long_minutes", 15, R.drawable.ic_bed, true), new LinearLayout.LayoutParams(0, -2, 1));
         durations.addView(r2);
 
@@ -157,7 +173,7 @@ public class SettingsActivity extends Activity {
         soundValue.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
         soundValue.setPadding(dp(14), 0, dp(14), 0);
         soundValue.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_chevron_left, 0, 0, 0);
-        soundValue.setBackground(rounded(Color.argb(112, 255, 255, 255), 25, 1));
+        soundValue.setBackground(rounded(Color.argb(112, 81, 70, 216), 25, 1));
         alert.addView(soundValue, lp(-1, 48));
         soundValue.setOnClickListener(v -> pickRingtone());
         TextView addSound = txt("＋   إضافة صوت من الجهاز", 15, "#FFFFFF", true);
@@ -246,6 +262,7 @@ public class SettingsActivity extends Activity {
         LinearLayout heading = horizontal();
         heading.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         heading.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        heading.setMinimumHeight(dp(compact ? 36 : 42));
         TextView t = txt(label, compact ? 11 : 13, "#F1EFFF", false);
         t.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         t.setMaxLines(3);
@@ -258,19 +275,37 @@ public class SettingsActivity extends Activity {
         heading.addView(im, ip);
         col.addView(heading);
         int initial = prefs.getInt(key, def);
-        FrameLayout box = new FrameLayout(this);
-        box.setBackground(rounded(Color.argb(100, 255, 255, 255), 14, 1));
-        TextView unit = txt(minutes ? minuteUnit(initial) : sessionUnit(initial), 11, "#E6E0FF", false);
-        unit.setGravity(Gravity.CENTER_VERTICAL);
-        unit.setPadding(dp(8), 0, dp(4), 0);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.HORIZONTAL);
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        box.setBackground(rounded(Color.TRANSPARENT, 14, 1));
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            box.setOutlineProvider(new ViewOutlineProvider() {
+                @Override public void getOutline(View view, android.graphics.Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), dp(14));
+                }
+            });
+            box.setClipToOutline(true);
+        }
+
+        // Left part: Unit - Lighter shade of #5146D8 with transparency
+        FrameLayout unitPart = new FrameLayout(this);
+        unitPart.setBackground(roundedPart(Color.argb(85, 108, 97, 232), false));
+        TextView unit = txt(minutes ? minuteUnit(initial) : sessionUnit(initial), 12, "#EBE5FF", true);
+        unit.setGravity(Gravity.CENTER);
+        unitPart.addView(unit, new FrameLayout.LayoutParams(-1, -1));
+
+        // Right part: Time/Number - Darker shade of #5146D8 with transparency
+        FrameLayout timePart = new FrameLayout(this);
+        timePart.setBackground(roundedPart(Color.argb(135, 56, 46, 172), true));
         EditText e = new EditText(this);
         e.setSingleLine(true);
         e.setTextSize(compact ? 16 : 18);
         e.setTextColor(Color.WHITE);
-        e.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
+        e.setGravity(Gravity.CENTER);
         e.setInputType(2);
         e.setIncludeFontPadding(false);
-        e.setPadding(dp(8), 0, dp(8), 0);
         e.setBackgroundColor(Color.TRANSPARENT);
         e.setText(String.valueOf(initial));
         e.addTextChangedListener(new TextWatcher() {
@@ -282,13 +317,22 @@ public class SettingsActivity extends Activity {
                 unit.setText(minutes ? minuteUnit(n) : sessionUnit(n));
             }
         });
-        box.addView(e, new FrameLayout.LayoutParams(-1, -1));
-        box.addView(unit, new FrameLayout.LayoutParams(-2, -1, Gravity.LEFT | Gravity.CENTER_VERTICAL));
-        col.addView(box, lp(-1, compact ? 42 : 46));
         if (key.equals("study_minutes")) study = e;
         if (key.equals("short_minutes")) shortBreak = e;
         if (key.equals("long_minutes")) longBreak = e;
         if (key.equals("long_after")) cycle = e;
+
+        timePart.addView(e, new FrameLayout.LayoutParams(-1, -1));
+        unitPart.setOnClickListener(v -> {
+            e.requestFocus();
+            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) imm.showSoftInput(e, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        });
+
+        box.addView(unitPart, new LinearLayout.LayoutParams(0, -1, 1f));
+        box.addView(timePart, new LinearLayout.LayoutParams(0, -1, 1f));
+
+        col.addView(box, lp(-1, compact ? 42 : 46));
         return col;
     }
     private String minuteUnit(int n) {
@@ -329,22 +373,80 @@ public class SettingsActivity extends Activity {
     }
     private void renderThemes() {
         themeGrid.removeAllViews();
-        int count = expanded ? themeNames.length : 4;
         int tileH = compact ? 92 : 108;
+        List<FrameLayout> tiles = new ArrayList<>();
+        String deviceImage = prefs.getString("device_image_uri", prefs.getString("custom_background_uri", null));
+        if (deviceImage != null) {
+            tiles.add(customTile(deviceImage, tileH));
+        }
+        for (int i = 0; i < themeNames.length; i++) {
+            tiles.add(themeTile(i, tileH));
+        }
+        int total = tiles.size();
+        int count = expanded ? total : Math.min(4, total);
         for (int i = 0; i < count; i += 2) {
             LinearLayout row = horizontal();
+            row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
             LinearLayout.LayoutParams p1 = new LinearLayout.LayoutParams(0, dp(tileH), 1);
             p1.setMargins(dp(3), 0, dp(3), 0);
-            row.addView(themeTile(i, tileH), p1);
+            row.addView(tiles.get(i), p1);
             if (i + 1 < count) {
                 LinearLayout.LayoutParams p2 = new LinearLayout.LayoutParams(0, dp(tileH), 1);
                 p2.setMargins(dp(3), 0, dp(3), 0);
-                row.addView(themeTile(i + 1, tileH), p2);
+                row.addView(tiles.get(i + 1), p2);
+            } else {
+                View spacer = new View(this);
+                LinearLayout.LayoutParams p2 = new LinearLayout.LayoutParams(0, dp(tileH), 1);
+                p2.setMargins(dp(3), 0, dp(3), 0);
+                row.addView(spacer, p2);
             }
             LinearLayout.LayoutParams rp = lp(-1, tileH);
             rp.topMargin = dp(6);
             themeGrid.addView(row, rp);
         }
+    }
+    private FrameLayout customTile(String uriString, int tileH) {
+        FrameLayout tile = new FrameLayout(this);
+        tile.setBackground(rounded(Color.DKGRAY, 15, 1));
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            tile.setOutlineProvider(new ViewOutlineProvider() {
+                @Override public void getOutline(View view, android.graphics.Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), dp(15));
+                }
+            });
+            tile.setClipToOutline(true);
+        }
+        ImageView image = new ImageView(this);
+        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        Glide.with(this)
+                .load(Uri.parse(uriString))
+                .apply(decoded(dp(240), dp(140)))
+                .into(image);
+        tile.addView(image, new FrameLayout.LayoutParams(-1, -1));
+        TextView caption = txt("صورة من الجهاز", 13, "#FFFFFF", true);
+        caption.setGravity(Gravity.CENTER);
+        caption.setShadowLayer(dp(3), 0, dp(1), Color.BLACK);
+        FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(-1, dp(28), Gravity.BOTTOM);
+        tile.addView(caption, cp);
+
+        boolean isSelected = prefs.getString("custom_background_uri", null) != null;
+        if (isSelected) {
+            View selected = new View(this);
+            GradientDrawable border = new GradientDrawable();
+            border.setColor(Color.TRANSPARENT);
+            border.setCornerRadius(dp(15));
+            border.setStroke(dp(2), c("#A991FF"));
+            selected.setBackground(border);
+            tile.addView(selected, new FrameLayout.LayoutParams(-1, -1));
+        }
+        tile.setOnClickListener(v -> {
+            prefs.edit().putString("custom_background_uri", uriString).apply();
+            renderThemes();
+            loadWallpaper();
+            sendBroadcast(new Intent("com.focus.app.THEME_CHANGED"));
+            Toast.makeText(this, "تم تطبيق صورة الجهاز", Toast.LENGTH_SHORT).show();
+        });
+        return tile;
     }
     private FrameLayout themeTile(int index, int tileH) {
         String name = themeNames[index];
@@ -368,7 +470,9 @@ public class SettingsActivity extends Activity {
         caption.setShadowLayer(dp(3), 0, dp(1), Color.BLACK);
         FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(-1, dp(28), Gravity.BOTTOM);
         tile.addView(caption, cp);
-        if (name.equals(prefs.getString("selected_theme", "Morning Sun"))) {
+        boolean isSelected = prefs.getString("custom_background_uri", null) == null
+                && name.equals(prefs.getString("selected_theme", "Morning Sun"));
+        if (isSelected) {
             View selected = new View(this);
             GradientDrawable border = new GradientDrawable();
             border.setColor(Color.TRANSPARENT);
@@ -380,12 +484,10 @@ public class SettingsActivity extends Activity {
         tile.setOnClickListener(v -> {
             prefs.edit().putString("selected_theme", name).remove("custom_background_uri").apply();
             renderThemes();
+            loadWallpaper();
             sendBroadcast(new Intent("com.focus.app.THEME_CHANGED"));
-            Toast.makeText(this, "تم اختيار " + name, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "تم تطبيق " + name, Toast.LENGTH_SHORT).show();
         });
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(tileH), 1);
-        p.setMargins(dp(3), 0, dp(3), 0);
-        tile.setLayoutParams(p);
         return tile;
     }
     private void pickRingtone() {
@@ -428,9 +530,14 @@ public class SettingsActivity extends Activity {
                 prefs.edit().putString("custom_sound_uri", uri.toString()).putString("alert_sound_name", "صوت مخصص من الجهاز").apply();
                 soundValue.setText("صوت مخصص من الجهاز");
             } else {
-                prefs.edit().putString("custom_background_uri", uri.toString()).apply();
+                prefs.edit()
+                        .putString("device_image_uri", uri.toString())
+                        .putString("custom_background_uri", uri.toString())
+                        .apply();
+                renderThemes();
+                loadWallpaper();
                 sendBroadcast(new Intent("com.focus.app.THEME_CHANGED"));
-                Toast.makeText(this, "تم تحديث الخلفية", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "تم تطبيق صورة الجهاز", Toast.LENGTH_SHORT).show();
             }
         }
     }
