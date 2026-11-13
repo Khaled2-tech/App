@@ -66,6 +66,18 @@ public class MainActivity extends Activity {
         d.setCornerRadius(dp(radius));
         return d;
     }
+    private GradientDrawable glassCard(int radius) {
+        GradientDrawable g = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        Color.argb(compact ? 205 : 190, 255, 255, 255),
+                        Color.argb(compact ? 145 : 125, 255, 255, 255)
+                }
+        );
+        g.setCornerRadius(dp(radius));
+        g.setStroke(dp(1.2f), Color.argb(210, 255, 255, 255));
+        return g;
+    }
     private TextView label(String s, int size, String color) {
         TextView t = new TextView(this);
         t.setText(s);
@@ -88,8 +100,12 @@ public class MainActivity extends Activity {
             g.setCornerRadius(dp(26));
             b.setBackground(g);
         } else {
-            GradientDrawable glass = shape(Color.argb(compact ? 245 : 235, 255, 255, 255), 24);
-            glass.setStroke(dp(1), Color.argb(40, 140, 120, 200));
+            GradientDrawable glass = new GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{Color.argb(compact ? 210 : 190, 255, 255, 255), Color.argb(compact ? 150 : 130, 255, 255, 255)}
+            );
+            glass.setCornerRadius(dp(24));
+            glass.setStroke(dp(1), Color.argb(180, 255, 255, 255));
             b.setBackground(glass);
         }
         b.setMinHeight(0);
@@ -214,15 +230,17 @@ public class MainActivity extends Activity {
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setGravity(Gravity.CENTER_HORIZONTAL);
         panel.setPadding(dp(16), dp(compact ? 12 : 16), dp(16), dp(compact ? 12 : 16));
-        GradientDrawable card = shape(Color.argb(compact ? 245 : 235, 255, 255, 255), 26);
+        GradientDrawable card = glassCard(26);
         panel.setBackground(card);
+        if (Build.VERSION.SDK_INT >= 21) panel.setElevation(dp(6));
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-1, 0, 1);
         pp.topMargin = dp(8);
         page.addView(panel, pp);
 
         phaseText = label("جلسة مذاكرة", compact ? 14 : 15, "#2C2E7A");
         phaseText.setTypeface(cairoSemi);
-        GradientDrawable badge = shape(Color.argb(220, 243, 238, 253), 20);
+        GradientDrawable badge = shape(Color.argb(160, 245, 240, 255), 20);
+        badge.setStroke(dp(1), Color.argb(170, 255, 255, 255));
         phaseText.setBackground(badge);
         phaseText.setPadding(dp(22), 0, dp(22), 0);
         panel.addView(phaseText, new LinearLayout.LayoutParams(-2, dp(36)));
@@ -284,7 +302,8 @@ public class MainActivity extends Activity {
         bottom.setOrientation(LinearLayout.VERTICAL);
         bottom.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         bottom.setPadding(dp(18), dp(12), dp(18), dp(14));
-        bottom.setBackground(shape(Color.argb(compact ? 245 : 235, 255, 255, 255), 24));
+        bottom.setBackground(glassCard(24));
+        if (Build.VERSION.SDK_INT >= 21) bottom.setElevation(dp(4));
         LinearLayout.LayoutParams botp = new LinearLayout.LayoutParams(-1, -2);
         botp.topMargin = dp(10);
         page.addView(bottom, botp);
