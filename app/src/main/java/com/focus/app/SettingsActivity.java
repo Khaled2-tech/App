@@ -156,8 +156,7 @@ public class SettingsActivity extends Activity {
         r1.addView(fieldColumn("مدة الاستراحة القصيرة", "short_minutes", 5, R.drawable.ic_coffee, true), new LinearLayout.LayoutParams(0, -2, 1));
         durations.addView(r1);
         LinearLayout r2 = horizontal();
-        r2.addView(fieldColumn("عدد جلسات المذاكرة
-قبل الاستراحة الطويلة", "long_after", 4, R.drawable.ic_sessions_cycle, false), new LinearLayout.LayoutParams(0, -2, 1));
+        r2.addView(fieldColumn("عدد جلسات المذاكرة\nقبل الاستراحة الطويلة", "long_after", 4, R.drawable.ic_sessions_cycle, false), new LinearLayout.LayoutParams(0, -2, 1));
         r2.addView(fieldColumn("مدة الاستراحة الطويلة", "long_minutes", 15, R.drawable.ic_bed, true), new LinearLayout.LayoutParams(0, -2, 1));
         durations.addView(r2);
 
