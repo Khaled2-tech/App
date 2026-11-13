@@ -82,14 +82,14 @@ public class MainActivity extends Activity {
         b.setTextSize(compact ? 13 : 14);
         b.setTypeface(cairoSemi);
         b.setIncludeFontPadding(false);
-        b.setTextColor(c(primary ? "#FFFFFF" : "#4746CB"));
+        b.setTextColor(c(primary ? "#FFFFFF" : "#2C2E7A"));
         if (primary) {
-            GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[]{c("#E65BAF"), c("#7654D8")});
-            g.setCornerRadius(dp(28));
+            GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[]{c("#8645C2"), c("#DE51A4")});
+            g.setCornerRadius(dp(26));
             b.setBackground(g);
         } else {
-            GradientDrawable glass = shape(Color.argb(90, 255, 255, 255), 24);
-            glass.setStroke(dp(1), Color.argb(90, 118, 84, 216));
+            GradientDrawable glass = shape(Color.argb(compact ? 245 : 235, 255, 255, 255), 24);
+            glass.setStroke(dp(1), Color.argb(40, 140, 120, 200));
             b.setBackground(glass);
         }
         b.setMinHeight(0);
@@ -192,12 +192,15 @@ public class MainActivity extends Activity {
         header.addView(edge, new LinearLayout.LayoutParams(dp(42), dp(42)));
         LinearLayout brand = new LinearLayout(this);
         brand.setGravity(Gravity.CENTER);
+        brand.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.ic_focus_logo);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        brand.addView(logo, new LinearLayout.LayoutParams(dp(compact ? 26 : 31), dp(compact ? 26 : 31)));
-        TextView brandText = label("Focus", compact ? 22 : 24, "#4746CB");
-        brandText.setTypeface(jakartaSemi);
+        LinearLayout.LayoutParams logop = new LinearLayout.LayoutParams(dp(compact ? 28 : 34), dp(compact ? 28 : 34));
+        logop.rightMargin = dp(8);
+        brand.addView(logo, logop);
+        TextView brandText = label("Focus", compact ? 22 : 25, "#2C2E7A");
+        brandText.setTypeface(jakartaBold);
         brand.addView(brandText);
         header.addView(brand, new LinearLayout.LayoutParams(0, dp(44), 1));
         ImageView settings = new ImageView(this);
@@ -210,40 +213,40 @@ public class MainActivity extends Activity {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setGravity(Gravity.CENTER_HORIZONTAL);
-        panel.setPadding(dp(14), dp(compact ? 8 : 12), dp(14), dp(compact ? 8 : 12));
-        GradientDrawable card = shape(Color.argb(compact ? 236 : 220, 255, 255, 255), 22);
+        panel.setPadding(dp(16), dp(compact ? 12 : 16), dp(16), dp(compact ? 12 : 16));
+        GradientDrawable card = shape(Color.argb(compact ? 245 : 235, 255, 255, 255), 26);
         panel.setBackground(card);
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-1, 0, 1);
         pp.topMargin = dp(8);
         page.addView(panel, pp);
 
-        phaseText = label("جلسة مذاكرة", compact ? 13 : 14, "#4746CB");
-        phaseText.setTypeface(cairoMedium);
-        GradientDrawable badge = shape(Color.argb(210, 243, 236, 252), 20);
+        phaseText = label("جلسة مذاكرة", compact ? 14 : 15, "#2C2E7A");
+        phaseText.setTypeface(cairoSemi);
+        GradientDrawable badge = shape(Color.argb(220, 243, 238, 253), 20);
         phaseText.setBackground(badge);
-        phaseText.setPadding(dp(16), 0, dp(16), 0);
-        panel.addView(phaseText, new LinearLayout.LayoutParams(-2, dp(34)));
+        phaseText.setPadding(dp(22), 0, dp(22), 0);
+        panel.addView(phaseText, new LinearLayout.LayoutParams(-2, dp(36)));
 
-        int reserved = dp(compact ? 250 : 290);
+        int reserved = dp(compact ? 250 : 280);
         int status = 0;
         int statusId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (statusId > 0) status = getResources().getDimensionPixelSize(statusId);
         int avail = dm.heightPixels - status - reserved;
-        int ringSize = Math.min(dp(compact ? 158 : 184), Math.min((int) (dm.widthPixels * (compact ? 0.46f : 0.52f)), Math.max(dp(120), avail)));
+        int ringSize = Math.min(dp(compact ? 180 : 210), Math.min((int) (dm.widthPixels * 0.60f), Math.max(dp(140), avail)));
         FrameLayout ringFrame = new FrameLayout(this);
         LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(ringSize, ringSize);
-        rp.topMargin = dp(4);
-        rp.bottomMargin = dp(2);
+        rp.topMargin = dp(compact ? 8 : 14);
+        rp.bottomMargin = dp(compact ? 6 : 10);
         panel.addView(ringFrame, rp);
         timerRing = new TimerRing(this);
         ringFrame.addView(timerRing, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout center = new LinearLayout(this);
         center.setOrientation(LinearLayout.VERTICAL);
         center.setGravity(Gravity.CENTER);
-        timerText = label("25:00", compact ? 34 : 40, "#4746CB");
+        timerText = label("25:00", compact ? 36 : 42, "#1E255E");
         timerText.setTypeface(jakartaBold);
         center.addView(timerText);
-        totalText = label("من 25:00", compact ? 12 : 13, "#6A68B4");
+        totalText = label("من 25:00", compact ? 13 : 14, "#7E8BA8");
         totalText.setTypeface(cairoMedium);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = dp(4);
@@ -251,25 +254,26 @@ public class MainActivity extends Activity {
         ringFrame.addView(center, new FrameLayout.LayoutParams(-1, -1));
 
         startButton = pill("ابدأ", true);
-        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, dp(compact ? 44 : 48));
-        sp.topMargin = dp(6);
-        sp.leftMargin = dp(8);
-        sp.rightMargin = dp(8);
+        startButton.setTextSize(compact ? 16 : 18);
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, dp(compact ? 48 : 52));
+        sp.topMargin = dp(compact ? 12 : 16);
+        sp.leftMargin = dp(14);
+        sp.rightMargin = dp(14);
         panel.addView(startButton, sp);
         startButton.setOnClickListener(v -> toggleTimer());
 
         LinearLayout controls = new LinearLayout(this);
         controls.setGravity(Gravity.CENTER);
         controls.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        String[] names = {"+ وقت", "تخطّي", "إنهاء"};
+        String[] names = {"+ وقت اضافي", "تخطّي", "إنهاء"};
         for (String n : names) {
             Button x = pill(n, false);
             x.setTypeface(cairoMedium);
-            LinearLayout.LayoutParams xp = new LinearLayout.LayoutParams(0, dp(compact ? 40 : 44), 1);
-            xp.setMargins(dp(3), dp(6), dp(3), 0);
+            LinearLayout.LayoutParams xp = new LinearLayout.LayoutParams(0, dp(compact ? 42 : 46), 1);
+            xp.setMargins(dp(4), dp(10), dp(4), 0);
             controls.addView(x, xp);
             x.setOnClickListener(v -> {
-                if (n.equals("+ وقت")) addFiveMinutes();
+                if (n.contains("وقت")) addFiveMinutes();
                 else if (n.equals("تخطّي")) nextPhase();
                 else finishPeriod();
             });
@@ -278,20 +282,21 @@ public class MainActivity extends Activity {
 
         LinearLayout bottom = new LinearLayout(this);
         bottom.setOrientation(LinearLayout.VERTICAL);
-        bottom.setGravity(Gravity.CENTER);
-        bottom.setPadding(dp(10), dp(8), dp(10), dp(8));
-        bottom.setBackground(shape(Color.argb(230, 255, 255, 255), 20));
+        bottom.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        bottom.setPadding(dp(18), dp(12), dp(18), dp(14));
+        bottom.setBackground(shape(Color.argb(compact ? 245 : 235, 255, 255, 255), 24));
         LinearLayout.LayoutParams botp = new LinearLayout.LayoutParams(-1, -2);
-        botp.topMargin = dp(8);
+        botp.topMargin = dp(10);
         page.addView(bottom, botp);
-        sessionsText = label("0 / 4 جلسات مكتملة في الدورة", compact ? 13 : 14, "#4746CB");
+        sessionsText = label("جلسات المذاكرة", compact ? 15 : 17, "#2C2E7A");
         sessionsText.setTypeface(cairoSemi);
+        sessionsText.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         bottom.addView(sessionsText, new LinearLayout.LayoutParams(-1, -2));
         progressDots = new LinearLayout(this);
         progressDots.setGravity(Gravity.CENTER);
         progressDots.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        LinearLayout.LayoutParams dots = new LinearLayout.LayoutParams(-1, dp(18));
-        dots.topMargin = dp(6);
+        LinearLayout.LayoutParams dots = new LinearLayout.LayoutParams(-1, dp(20));
+        dots.topMargin = dp(8);
         bottom.addView(progressDots, dots);
         setContentView(root);
         sync();
@@ -419,12 +424,12 @@ public class MainActivity extends Activity {
         progressDots.removeAllViews();
         int total = Math.max(1, Math.min(12, prefs.getInt("long_after", 4)));
         int done = prefs.getInt("completed_sessions", 0) % total;
-        sessionsText.setText(String.format(Locale.US, "%d / %d جلسات مكتملة في الدورة", done, total));
+        sessionsText.setText("جلسات المذاكرة");
         for (int i = 0; i < total; i++) {
             View dot = new View(this);
-            dot.setBackground(shape(i < done ? Color.argb(220, 229, 150, 209) : Color.argb(110, 229, 150, 209), 20));
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(8), dp(8));
-            p.setMargins(dp(3), 0, dp(3), 0);
+            dot.setBackground(shape(i < done ? Color.parseColor("#9B57C2") : Color.argb(120, 204, 182, 228), 20));
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(compact ? 9 : 11), dp(compact ? 9 : 11));
+            p.setMargins(dp(5), 0, dp(5), 0);
             progressDots.addView(dot, p);
         }
     }
@@ -445,21 +450,30 @@ public class MainActivity extends Activity {
         void setFraction(float f) { fraction = f; invalidate(); }
         @Override protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
-            float w = getWidth(), h = getHeight(), r = Math.min(w, h) * .42f;
+            float w = getWidth(), h = getHeight();
+            float strokeW = dp(compact ? 9 : 11);
+            float r = (Math.min(w, h) - strokeW) * 0.46f;
+
             p.setShader(null);
             p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(dp(compact ? 7 : 8));
+            p.setStrokeWidth(strokeW);
             p.setStrokeCap(Paint.Cap.ROUND);
-            p.setColor(Color.argb(40, 226, 133, 159));
+
+            // Background empty track
+            p.setColor(Color.argb(35, 120, 100, 200));
             canvas.drawCircle(w / 2, h / 2, r, p);
-            p.setShader(new SweepGradient(w / 2, h / 2,
-                    new int[]{Color.parseColor("#4746CB"), Color.parseColor("#766BE0"), Color.parseColor("#E596D1"), Color.parseColor("#4746CB")},
-                    new float[]{0f, .45f, .88f, 1f}));
-            canvas.save();
-            canvas.rotate(-90, w / 2, h / 2);
-            canvas.drawArc(w / 2 - r, h / 2 - r, w / 2 + r, h / 2 + r, 0, -360 * fraction, false, p);
-            canvas.restore();
-            p.setShader(null);
+
+            if (fraction > 0.001f) {
+                // Gradient starting at 12 o'clock (-90 degrees) and sweeping clockwise
+                p.setShader(new SweepGradient(w / 2, h / 2,
+                        new int[]{Color.parseColor("#E458A5"), Color.parseColor("#7C50CB"), Color.parseColor("#4F59D2"), Color.parseColor("#7860D4"), Color.parseColor("#E458A5")},
+                        new float[]{0f, 0.28f, 0.62f, 0.85f, 1f}));
+                canvas.save();
+                canvas.rotate(-90, w / 2, h / 2);
+                canvas.drawArc(w / 2 - r, h / 2 - r, w / 2 + r, h / 2 + r, 0, 360f * fraction, false, p);
+                canvas.restore();
+                p.setShader(null);
+            }
         }
     }
 }
