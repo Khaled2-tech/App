@@ -6,9 +6,13 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Outline;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.RectF;
 import android.graphics.SweepGradient;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -37,6 +41,10 @@ public class MainActivity extends Activity {
     private CountDownTimer ticker;
     private ImageView wallpaper;
     private LinearLayout progressDots;
+    private LinearLayout timerPanel;
+    private LinearLayout sessionsCard;
+    private Bitmap blurredWallpaper;
+    private int blurGeneration;
     private int phase;
     private boolean running;
     private boolean compact;
@@ -66,17 +74,94 @@ public class MainActivity extends Activity {
         d.setCornerRadius(dp(radius));
         return d;
     }
-    private GradientDrawable glassCard(int radius) {
-        GradientDrawable g = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{
-                        Color.argb(compact ? 205 : 190, 255, 255, 255),
-                        Color.argb(compact ? 145 : 125, 255, 255, 255)
+    /** Same glass recipe as SettingsActivity.card(): sheer white, lavender hairline, photo showing through. */
+    private Drawable glassCard(View host, int radius) {
+        return new GlassCardDrawable(host, radius);
+    }
+
+    private void prepareBlur(Bitmap bitmap) {
+        final int gen = ++blurGeneration;
+        final Bitmap src;
+        try {
+            src = bitmap.copy(Bitmap.Config.ARGB_8888, false);
+        } catch (Exception e) {
+            return;
+        }
+        if (src == null) return;
+        new Thread(() -> {
+            Bitmap blurred = frost(src);
+            if (src != blurred && !src.isRecycled()) src.recycle();
+            runOnUiThread(() -> {
+                if (gen != blurGeneration) {
+                    if (blurred != null && !blurred.isRecycled()) blurred.recycle();
+                    return;
                 }
-        );
-        g.setCornerRadius(dp(radius));
-        g.setStroke(dp(1.2f), Color.argb(210, 255, 255, 255));
-        return g;
+                Bitmap previous = blurredWallpaper;
+                blurredWallpaper = blurred;
+                if (previous != null && previous != blurred && !previous.isRecycled()) previous.recycle();
+                if (timerPanel != null) timerPanel.invalidate();
+                if (sessionsCard != null) sessionsCard.invalidate();
+            });
+        }, "focus-glass").start();
+    }
+
+    private static Bitmap frost(Bitmap src) {
+        int tw = Math.max(12, src.getWidth() / 5);
+        int th = Math.max(12, src.getHeight() / 5);
+        Bitmap small = Bitmap.createScaledBitmap(src, tw, th, true);
+        if (small.getConfig() != Bitmap.Config.ARGB_8888 || !small.isMutable()) {
+            Bitmap mutable = small.copy(Bitmap.Config.ARGB_8888, true);
+            if (mutable != null && mutable != small) {
+                if (small != src) small.recycle();
+                small = mutable;
+            }
+        }
+        boxBlur(small, Math.max(2, Math.min(tw, th) / 12), 3);
+        return small;
+    }
+
+    private static void boxBlur(Bitmap bmp, int radius, int passes) {
+        int w = bmp.getWidth(), h = bmp.getHeight();
+        int[] pix = new int[w * h];
+        int[] tmp = new int[pix.length];
+        bmp.getPixels(pix, 0, w, 0, 0, w, h);
+        for (int i = 0; i < passes; i++) {
+            blurAxis(pix, tmp, w, h, radius, true);
+            blurAxis(tmp, pix, w, h, radius, false);
+        }
+        bmp.setPixels(pix, 0, w, 0, 0, w, h);
+    }
+
+    private static void blurAxis(int[] in, int[] out, int w, int h, int r, boolean horizontal) {
+        int window = r * 2 + 1;
+        int outer = horizontal ? h : w;
+        int inner = horizontal ? w : h;
+        for (int o = 0; o < outer; o++) {
+            int rs = 0, gs = 0, bs = 0;
+            for (int i = -r; i <= r; i++) {
+                int p = in[index(w, o, clamp(i, 0, inner - 1), horizontal)];
+                rs += (p >> 16) & 255;
+                gs += (p >> 8) & 255;
+                bs += p & 255;
+            }
+            for (int i = 0; i < inner; i++) {
+                int v = 0xff000000 | ((rs / window) << 16) | ((gs / window) << 8) | (bs / window);
+                out[index(w, o, i, horizontal)] = v;
+                int remove = in[index(w, o, clamp(i - r, 0, inner - 1), horizontal)];
+                int add = in[index(w, o, clamp(i + r + 1, 0, inner - 1), horizontal)];
+                rs += ((add >> 16) & 255) - ((remove >> 16) & 255);
+                gs += ((add >> 8) & 255) - ((remove >> 8) & 255);
+                bs += (add & 255) - (remove & 255);
+            }
+        }
+    }
+
+    private static int index(int w, int outer, int inner, boolean horizontal) {
+        return horizontal ? outer * w + inner : inner * w + outer;
+    }
+
+    private static int clamp(int v, int min, int max) {
+        return v < min ? min : (v > max ? max : v);
     }
     private TextView label(String s, int size, String color) {
         TextView t = new TextView(this);
@@ -129,6 +214,7 @@ public class MainActivity extends Activity {
                 .into(new CustomTarget<Bitmap>(w, h) {
                     @Override public void onResourceReady(Bitmap bitmap, Transition<? super Bitmap> transition) {
                         wallpaper.setImageBitmap(bitmap);
+                        prepareBlur(bitmap);
                         int color = topAverage(bitmap);
                         if (Build.VERSION.SDK_INT >= 21) {
                             getWindow().setStatusBarColor(color);
@@ -226,13 +312,16 @@ public class MainActivity extends Activity {
         header.addView(settings, new LinearLayout.LayoutParams(dp(42), dp(42)));
         page.addView(header);
 
-        LinearLayout panel = new LinearLayout(this);
+        timerPanel = new LinearLayout(this);
+        LinearLayout panel = timerPanel;
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setGravity(Gravity.CENTER_HORIZONTAL);
         panel.setPadding(dp(16), dp(compact ? 12 : 16), dp(16), dp(compact ? 12 : 16));
-        GradientDrawable card = glassCard(26);
-        panel.setBackground(card);
-        if (Build.VERSION.SDK_INT >= 21) panel.setElevation(dp(6));
+        panel.setBackground(glassCard(panel, 26));
+        if (Build.VERSION.SDK_INT >= 21) {
+            panel.setElevation(0);
+            panel.setClipToOutline(true);
+        }
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-1, 0, 1);
         pp.topMargin = dp(8);
         page.addView(panel, pp);
@@ -261,10 +350,10 @@ public class MainActivity extends Activity {
         LinearLayout center = new LinearLayout(this);
         center.setOrientation(LinearLayout.VERTICAL);
         center.setGravity(Gravity.CENTER);
-        timerText = label("25:00", compact ? 36 : 42, "#1E255E");
+        timerText = label("25:00", compact ? 36 : 42, "#FFFFFF");
         timerText.setTypeface(jakartaBold);
         center.addView(timerText);
-        totalText = label("من 25:00", compact ? 13 : 14, "#7E8BA8");
+        totalText = label("من 25:00", compact ? 13 : 14, "#F5F2FF");
         totalText.setTypeface(cairoMedium);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = dp(4);
@@ -298,16 +387,20 @@ public class MainActivity extends Activity {
         }
         panel.addView(controls, new LinearLayout.LayoutParams(-1, -2));
 
-        LinearLayout bottom = new LinearLayout(this);
+        sessionsCard = new LinearLayout(this);
+        LinearLayout bottom = sessionsCard;
         bottom.setOrientation(LinearLayout.VERTICAL);
         bottom.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         bottom.setPadding(dp(18), dp(12), dp(18), dp(14));
-        bottom.setBackground(glassCard(24));
-        if (Build.VERSION.SDK_INT >= 21) bottom.setElevation(dp(4));
+        bottom.setBackground(glassCard(bottom, 24));
+        if (Build.VERSION.SDK_INT >= 21) {
+            bottom.setElevation(0);
+            bottom.setClipToOutline(true);
+        }
         LinearLayout.LayoutParams botp = new LinearLayout.LayoutParams(-1, -2);
         botp.topMargin = dp(10);
         page.addView(bottom, botp);
-        sessionsText = label("جلسات المذاكرة", compact ? 15 : 17, "#2C2E7A");
+        sessionsText = label("جلسات المذاكرة", compact ? 15 : 17, "#FFFFFF");
         sessionsText.setTypeface(cairoSemi);
         sessionsText.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         bottom.addView(sessionsText, new LinearLayout.LayoutParams(-1, -2));
@@ -318,6 +411,10 @@ public class MainActivity extends Activity {
         dots.topMargin = dp(8);
         bottom.addView(progressDots, dots);
         setContentView(root);
+        root.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            if (timerPanel != null) timerPanel.invalidate();
+            if (sessionsCard != null) sessionsCard.invalidate();
+        });
         sync();
     }
 
@@ -457,8 +554,13 @@ public class MainActivity extends Activity {
         if (prefs != null && phaseText != null) { loadWallpaper(); sync(); }
     }
     @Override protected void onDestroy() {
+        blurGeneration++;
         if (ticker != null) ticker.cancel();
         if (prefs != null) prefs.unregisterOnSharedPreferenceChangeListener(listener);
+        if (blurredWallpaper != null && !blurredWallpaper.isRecycled()) {
+            blurredWallpaper.recycle();
+            blurredWallpaper = null;
+        }
         super.onDestroy();
     }
 
@@ -479,7 +581,7 @@ public class MainActivity extends Activity {
             p.setStrokeCap(Paint.Cap.ROUND);
 
             // Background empty track
-            p.setColor(Color.argb(35, 120, 100, 200));
+            p.setColor(Color.argb(90, 220, 210, 255));
             canvas.drawCircle(w / 2, h / 2, r, p);
 
             if (fraction > 0.001f) {
@@ -493,6 +595,68 @@ public class MainActivity extends Activity {
                 canvas.restore();
                 p.setShader(null);
             }
+        }
+    }
+
+    /** Frosted card: blurred wallpaper, the same navy veil and sheer white fill as settings, lavender stroke. */
+    private final class GlassCardDrawable extends Drawable {
+        private final View host;
+        private final float radius;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        private final RectF rect = new RectF();
+
+        GlassCardDrawable(View host, int radiusDp) {
+            this.host = host;
+            this.radius = dp(radiusDp);
+        }
+
+        @Override public void draw(Canvas canvas) {
+            rect.set(getBounds());
+            drawBackdrop(canvas);
+            paint.setShader(null);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb(150, 8, 17, 43));
+            canvas.drawRoundRect(rect, radius, radius, paint);
+            paint.setColor(Color.argb(56, 255, 255, 255));
+            canvas.drawRoundRect(rect, radius, radius, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(Math.max(1, dp(1)));
+            paint.setColor(Color.argb(105, 205, 194, 255));
+            canvas.drawRoundRect(rect, radius, radius, paint);
+        }
+
+        private void drawBackdrop(Canvas canvas) {
+            Bitmap bmp = blurredWallpaper;
+            if (bmp == null || bmp.isRecycled() || wallpaper == null || !host.isAttachedToWindow()
+                    || wallpaper.getWidth() == 0 || wallpaper.getHeight() == 0) {
+                return;
+            }
+            int[] hostLoc = new int[2];
+            int[] wallLoc = new int[2];
+            host.getLocationOnScreen(hostLoc);
+            wallpaper.getLocationOnScreen(wallLoc);
+            float cx = hostLoc[0] - wallLoc[0];
+            float cy = hostLoc[1] - wallLoc[1];
+            float scale = Math.max(wallpaper.getWidth() / (float) bmp.getWidth(), wallpaper.getHeight() / (float) bmp.getHeight());
+            float dx = (wallpaper.getWidth() - bmp.getWidth() * scale) / 2f;
+            float dy = (wallpaper.getHeight() - bmp.getHeight() * scale) / 2f;
+            android.graphics.BitmapShader shader = new android.graphics.BitmapShader(
+                    bmp, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP);
+            android.graphics.Matrix matrix = new android.graphics.Matrix();
+            matrix.setScale(scale, scale);
+            matrix.postTranslate(dx - cx, dy - cy);
+            shader.setLocalMatrix(matrix);
+            paint.setShader(shader);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawRoundRect(rect, radius, radius, paint);
+            paint.setShader(null);
+        }
+
+        @Override public void setAlpha(int alpha) {}
+        @Override public void setColorFilter(android.graphics.ColorFilter colorFilter) { paint.setColorFilter(colorFilter); }
+        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
+        @Override public void getOutline(Outline outline) {
+            outline.setRoundRect(getBounds(), radius);
         }
     }
 }
