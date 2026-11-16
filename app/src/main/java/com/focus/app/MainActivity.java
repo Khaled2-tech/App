@@ -309,7 +309,7 @@ public class MainActivity extends Activity {
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         View edge = new View(this);
-        header.addView(edge, new LinearLayout.LayoutParams(dp(42), dp(42)));
+        header.addView(edge, new LinearLayout.LayoutParams(dp(48), dp(48)));
         LinearLayout brand = new LinearLayout(this);
         brand.setGravity(Gravity.CENTER);
         brand.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
@@ -325,9 +325,9 @@ public class MainActivity extends Activity {
         header.addView(brand, new LinearLayout.LayoutParams(0, dp(44), 1));
         ImageView settings = new ImageView(this);
         settings.setImageResource(R.drawable.ic_settings);
-        settings.setPadding(dp(10), dp(10), dp(10), dp(10));
+        settings.setPadding(dp(8), dp(8), dp(8), dp(8));
         settings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
-        header.addView(settings, new LinearLayout.LayoutParams(dp(42), dp(42)));
+        header.addView(settings, new LinearLayout.LayoutParams(dp(48), dp(48)));
         page.addView(header);
 
         timerPanel = new LinearLayout(this);
