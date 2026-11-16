@@ -543,8 +543,8 @@ public class MainActivity extends Activity {
         sessionsText.setText("جلسات المذاكرة");
         for (int i = 0; i < total; i++) {
             View dot = new View(this);
-            dot.setBackground(shape(i < done ? Color.parseColor("#9B57C2") : Color.argb(120, 204, 182, 228), 20));
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(compact ? 9 : 11), dp(compact ? 9 : 11));
+            dot.setBackground(shape(i < done ? Color.parseColor("#9B57C2") : Color.argb(120, 204, 182, 228), 6));
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(12), dp(12));
             p.setMargins(dp(5), 0, dp(5), 0);
             progressDots.addView(dot, p);
         }
