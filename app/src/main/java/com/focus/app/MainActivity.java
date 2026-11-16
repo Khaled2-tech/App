@@ -14,10 +14,14 @@ import android.graphics.SweepGradient;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.animation.TimeInterpolator;
+import android.animation.ValueAnimator;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
+import android.view.animation.DecelerateInterpolator;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -38,8 +42,22 @@ public class MainActivity extends Activity {
     private TextView phaseText, timerText, totalText, sessionsText;
     private Button startButton;
     private TimerRing timerRing;
-    private CountDownTimer ticker;
     private ImageView wallpaper;
+    private final Runnable tickerRunnable = new Runnable() {
+        @Override public void run() {
+            if (!running || isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
+            long now = System.currentTimeMillis();
+            long end = prefs.getLong("end_at", now);
+            long left = Math.max(0, end - now);
+            render(left);
+            updateRing(left);
+            if (left <= 0) {
+                sync();
+            } else if (timerRing != null) {
+                timerRing.postOnAnimation(this);
+            }
+        }
+    };
     private LinearLayout progressDots;
     private LinearLayout timerPanel;
     private LinearLayout sessionsCard;
@@ -435,9 +453,12 @@ public class MainActivity extends Activity {
             prefs.edit().putBoolean("running", false).putLong("remaining_ms", left).apply();
             stopService(new Intent(this, TimerService.class));
             running = false;
-            if (ticker != null) ticker.cancel();
+            stopTicker();
             startButton.setText("استئناف");
-            updateRing(left);
+            if (timerRing != null) {
+                float f = sessionDuration() <= 0 ? 1f : Math.max(0f, Math.min(1f, (float) left / sessionDuration()));
+                timerRing.forceFraction(f);
+            }
             return;
         }
         long total = sessionDuration();
@@ -459,19 +480,30 @@ public class MainActivity extends Activity {
         long now = System.currentTimeMillis();
         long left = running ? Math.max(0, prefs.getLong("end_at", now) - now) : prefs.getLong("remaining_ms", durationFor(phase));
         long total = sessionDuration() + 300000L;
-        prefs.edit().putLong("session_duration_ms", total).putLong("end_at", now + left + 300000L).putLong("remaining_ms", left + 300000L).apply();
+        long newLeft = left + 300000L;
+        prefs.edit().putLong("session_duration_ms", total).putLong("end_at", now + newLeft).putLong("remaining_ms", newLeft).apply();
+        float newFraction = total <= 0 ? 1f : Math.max(0f, Math.min(1f, (float) newLeft / total));
+        if (timerRing != null) {
+            timerRing.animateToFraction(newFraction, 450, new DecelerateInterpolator());
+        }
         if (running) {
             Intent i = new Intent(this, TimerService.class);
             i.setAction(TimerService.ACTION_REFRESH);
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
             startTicker();
-        } else updateRing(left + 300000L);
+        } else {
+            render(newLeft);
+            totalText.setText("من " + clock(total));
+        }
     }
     private void nextPhase() {
         stopCurrent();
         phase = (phase + 1) % 3;
         long d = durationFor(phase);
         prefs.edit().putInt("phase", phase).putLong("remaining_ms", d).putLong("session_duration_ms", d).putBoolean("running", false).apply();
+        if (timerRing != null) {
+            timerRing.animateToFraction(1.0f, 400, new DecelerateInterpolator());
+        }
         sync();
     }
     private void finishPeriod() {
@@ -479,6 +511,9 @@ public class MainActivity extends Activity {
         phase = 0;
         long d = durationFor(0);
         prefs.edit().putInt("phase", 0).putLong("remaining_ms", d).putLong("session_duration_ms", d).putBoolean("running", false).apply();
+        if (timerRing != null) {
+            timerRing.animateToFraction(1.0f, 400, new DecelerateInterpolator());
+        }
         sync();
     }
     private void stopCurrent() {
@@ -487,7 +522,7 @@ public class MainActivity extends Activity {
             stopService(new Intent(this, TimerService.class));
             running = false;
         }
-        if (ticker != null) ticker.cancel();
+        stopTicker();
     }
     private boolean inSync;
     private void sync() {
@@ -511,7 +546,7 @@ public class MainActivity extends Activity {
             startButton.setText(running ? "إيقاف مؤقت" : paused ? "استئناف" : "ابدأ");
             updateRing(left);
             if (running && left > 0) startTicker();
-            else if (ticker != null) ticker.cancel();
+            else stopTicker();
         } finally {
             inSync = false;
         }
@@ -527,13 +562,15 @@ public class MainActivity extends Activity {
         timerRing.setFraction(f);
     }
     private void startTicker() {
-        if (ticker != null) ticker.cancel();
-        long left = Math.max(0, prefs.getLong("end_at", System.currentTimeMillis()) - System.currentTimeMillis());
-        ticker = new CountDownTimer(Math.max(left, 1), 250) {
-            public void onTick(long m) { render(m); updateRing(m); }
-            public void onFinish() { sync(); }
-        };
-        ticker.start();
+        stopTicker();
+        if (running && timerRing != null) {
+            timerRing.postOnAnimation(tickerRunnable);
+        }
+    }
+    private void stopTicker() {
+        if (timerRing != null) {
+            timerRing.removeCallbacks(tickerRunnable);
+        }
     }
     private void renderProgressDots() {
         if (progressDots == null || sessionsText == null) return;
@@ -552,10 +589,15 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         if (prefs != null && phaseText != null) { loadWallpaper(); sync(); }
+        if (running) startTicker();
+    }
+    @Override protected void onPause() {
+        stopTicker();
+        super.onPause();
     }
     @Override protected void onDestroy() {
         blurGeneration++;
-        if (ticker != null) ticker.cancel();
+        stopTicker();
         if (prefs != null) prefs.unregisterOnSharedPreferenceChangeListener(listener);
         if (blurredWallpaper != null && !blurredWallpaper.isRecycled()) {
             blurredWallpaper.recycle();
@@ -565,35 +607,100 @@ public class MainActivity extends Activity {
     }
 
     private class TimerRing extends View {
-        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        float fraction = 1f;
-        TimerRing(android.content.Context c) { super(c); }
-        void setFraction(float f) { fraction = f; invalidate(); }
+        private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF arcBounds = new RectF();
+        private float fraction = 1f;
+        private ValueAnimator ringAnimator;
+
+        TimerRing(android.content.Context c) {
+            super(c);
+            trackPaint.setStyle(Paint.Style.STROKE);
+            trackPaint.setStrokeCap(Paint.Cap.ROUND);
+
+            progressPaint.setStyle(Paint.Style.STROKE);
+            progressPaint.setStrokeCap(Paint.Cap.ROUND);
+
+            glowPaint.setStyle(Paint.Style.FILL);
+        }
+
+        void setFraction(float f) {
+            if (ringAnimator != null && ringAnimator.isRunning()) return;
+            this.fraction = Math.max(0f, Math.min(1f, f));
+            invalidate();
+        }
+
+        void forceFraction(float f) {
+            if (ringAnimator != null && ringAnimator.isRunning()) {
+                ringAnimator.cancel();
+            }
+            this.fraction = Math.max(0f, Math.min(1f, f));
+            invalidate();
+        }
+
+        float getFraction() {
+            return fraction;
+        }
+
+        void animateToFraction(float target, long durationMs, TimeInterpolator interpolator) {
+            if (ringAnimator != null && ringAnimator.isRunning()) {
+                ringAnimator.cancel();
+            }
+            final float start = this.fraction;
+            final float end = Math.max(0f, Math.min(1f, target));
+            if (Math.abs(start - end) < 0.002f) {
+                this.fraction = end;
+                invalidate();
+                return;
+            }
+            ringAnimator = ValueAnimator.ofFloat(start, end);
+            ringAnimator.setDuration(durationMs);
+            if (interpolator != null) ringAnimator.setInterpolator(interpolator);
+            ringAnimator.addUpdateListener(anim -> {
+                fraction = (float) anim.getAnimatedValue();
+                invalidate();
+            });
+            ringAnimator.start();
+        }
+
         @Override protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
             float w = getWidth(), h = getHeight();
-            float strokeW = dp(compact ? 9 : 11);
-            float r = (Math.min(w, h) - strokeW) * 0.46f;
+            if (w <= 0 || h <= 0) return;
 
-            p.setShader(null);
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(strokeW);
-            p.setStrokeCap(Paint.Cap.ROUND);
+            float strokeW = dp(compact ? 7 : 8);
+            float r = (Math.min(w, h) - strokeW) * 0.47f;
+            float cx = w / 2f, cy = h / 2f;
 
-            // Background empty track
-            p.setColor(Color.argb(90, 220, 210, 255));
-            canvas.drawCircle(w / 2, h / 2, r, p);
+            // 1. Soft inner ambient glow reflecting warm pink, purple and indigo
+            glowPaint.setShader(new RadialGradient(cx, cy, r * 0.88f,
+                    new int[]{Color.argb(28, 216, 102, 140), Color.argb(16, 139, 84, 180), Color.argb(8, 91, 100, 214), Color.TRANSPARENT},
+                    new float[]{0f, 0.45f, 0.80f, 1f}, Shader.TileMode.CLAMP));
+            canvas.drawCircle(cx, cy, r * 0.88f, glowPaint);
 
+            // 2. Inactive track: pale translucent lavender / pinkish-gray (#E6D6E8)
+            trackPaint.setStrokeWidth(strokeW);
+            trackPaint.setColor(Color.argb(45, 230, 214, 232));
+            canvas.drawCircle(cx, cy, r, trackPaint);
+
+            // 3. Active progress: smooth sweep gradient starting from top (12 o'clock / -90°)
+            // Warm reddish-pink (#D8668C) at top, purple (#8B54B4) mid, calm indigo (#5B64D6) at bottom
             if (fraction > 0.001f) {
-                // Gradient starting at 12 o'clock (-90 degrees) and sweeping clockwise
-                p.setShader(new SweepGradient(w / 2, h / 2,
-                        new int[]{Color.parseColor("#E458A5"), Color.parseColor("#7C50CB"), Color.parseColor("#4F59D2"), Color.parseColor("#7860D4"), Color.parseColor("#E458A5")},
-                        new float[]{0f, 0.28f, 0.62f, 0.85f, 1f}));
+                progressPaint.setStrokeWidth(strokeW);
+                progressPaint.setShader(new SweepGradient(cx, cy,
+                        new int[]{Color.parseColor("#D8668C"), Color.parseColor("#8B54B4"), Color.parseColor("#5B64D6"), Color.parseColor("#8B54B4"), Color.parseColor("#D8668C")},
+                        new float[]{0f, 0.25f, 0.5f, 0.75f, 1f}));
+
                 canvas.save();
-                canvas.rotate(-90, w / 2, h / 2);
-                canvas.drawArc(w / 2 - r, h / 2 - r, w / 2 + r, h / 2 + r, 0, 360f * fraction, false, p);
+                canvas.rotate(-90, cx, cy);
+                arcBounds.set(cx - r, cy - r, cx + r, cy + r);
+                if (fraction >= 0.999f) {
+                    canvas.drawCircle(cx, cy, r, progressPaint);
+                } else {
+                    canvas.drawArc(arcBounds, 0, Math.max(0.5f, 360f * fraction), false, progressPaint);
+                }
                 canvas.restore();
-                p.setShader(null);
             }
         }
     }
