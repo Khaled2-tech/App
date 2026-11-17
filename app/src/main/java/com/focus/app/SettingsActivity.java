@@ -378,11 +378,7 @@ public class SettingsActivity extends Activity {
         volHeader.setGravity(Gravity.CENTER_VERTICAL);
         TextView volTitle = txt("مستوى التنبيه", 14, "#FFFFFF", true);
         volHeader.addView(volTitle);
-        View volSpacer = new View(this);
-        volHeader.addView(volSpacer, new LinearLayout.LayoutParams(0, 0, 1));
         int currentVol = prefs.getInt("alert_volume_percent", 80);
-        TextView volPercentText = txt(currentVol + "%", 13, "#C4B8FF", false);
-        volHeader.addView(volPercentText);
         volumeSection.addView(volHeader, lp(-1, -2));
 
         SeekBar volumeBar = new SeekBar(this);
@@ -400,7 +396,6 @@ public class SettingsActivity extends Activity {
         volumeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    volPercentText.setText(progress + "%");
                     prefs.edit().putInt("alert_volume_percent", progress)
                             .putFloat("alert_volume", progress / 100f).apply();
                 }
