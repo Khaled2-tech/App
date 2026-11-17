@@ -13,7 +13,7 @@ A lightweight Android timer for the Focus study workflow, laid out for a Samsung
 - Wallpapers are decoded at screen size in RGB_565 so the large theme photos do not run out of memory.
 
 ## Build
-GitHub Actions builds a debug APK on every push to `main` and uploads it as `Focus-debug-APK`.
+GitHub Actions builds a debug APK on every push to `main` and uploads it as `Focus-APK`.
 
 Locally: JDK 17 and `gradle assembleDebug`.
 
