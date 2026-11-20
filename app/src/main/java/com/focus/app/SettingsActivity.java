@@ -125,6 +125,8 @@ public class SettingsActivity extends Activity {
     private boolean ambientExpanded;
     private LinearLayout ambientGrid;
     private TextView moreAmbient;
+    private FrameLayout ambientPlayButton;
+    private ImageView ambientPlayIcon;
 
     private final String[] themeNames = {
             "Golden Glow", "Pink Clouds", "Cozy Corner", "Night City",
@@ -185,6 +187,7 @@ public class SettingsActivity extends Activity {
             ambientPlayer.setLooping(true);
             ambientPlayer.start();
         } catch (Exception ignored) {}
+        updateAmbientPlayButton();
     }
 
     private void stopAmbient() {
@@ -192,6 +195,43 @@ public class SettingsActivity extends Activity {
             try { ambientPlayer.stop(); ambientPlayer.release(); } catch (Exception ignored) {}
             ambientPlayer = null;
         }
+        updateAmbientPlayButton();
+    }
+
+    private void toggleAmbientPlayback() {
+        String selectedKey = prefs.getString("ambient_sound_key", "");
+        if (selectedKey.isEmpty()) {
+            Toast.makeText(this, "اختر صوتاً أولاً", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (ambientPlayer != null && ambientPlayer.isPlaying()) {
+            try { ambientPlayer.pause(); } catch (Exception ignored) {}
+            updateAmbientPlayButton();
+            return;
+        }
+        if (ambientPlayer != null) {
+            try {
+                ambientPlayer.start();
+                updateAmbientPlayButton();
+                return;
+            } catch (Exception ignored) {
+                stopAmbient();
+            }
+        }
+        for (AmbientSoundItem item : AMBIENT_ITEMS) {
+            if (item.key.equals(selectedKey)) {
+                playAmbient(item.rawRes);
+                return;
+            }
+        }
+    }
+
+    private void updateAmbientPlayButton() {
+        if (ambientPlayIcon == null || ambientPlayButton == null) return;
+        boolean playing = ambientPlayer != null && ambientPlayer.isPlaying();
+        ambientPlayIcon.setImageResource(playing ? R.drawable.ic_pause : R.drawable.ic_play);
+        ambientPlayIcon.setColorFilter(Color.WHITE);
+        ambientPlayButton.setContentDescription(playing ? "إيقاف الأصوات المحيطة مؤقتاً" : "تشغيل الأصوات المحيطة");
     }
 
     private void playAlertPreview(int rawRes) {
@@ -332,6 +372,28 @@ public class SettingsActivity extends Activity {
 
         ambientCard.addView(ambHeader, lp(-1, 38));
 
+        LinearLayout playRow = horizontal();
+        playRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        playRow.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        ambientPlayButton = new FrameLayout(this);
+        ambientPlayButton.setContentDescription("تشغيل الأصوات المحيطة");
+        ambientPlayButton.setFocusable(true);
+        ambientPlayButton.setClickable(true);
+        ambientPlayButton.setBackground(rounded(c("#7432FF"), 50, 0));
+        ambientPlayIcon = new ImageView(this);
+        ambientPlayIcon.setImageResource(R.drawable.ic_play);
+        ambientPlayIcon.setColorFilter(Color.WHITE);
+        ambientPlayIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        FrameLayout.LayoutParams playIconLp = new FrameLayout.LayoutParams(dp(12), dp(12), Gravity.CENTER);
+        ambientPlayButton.addView(ambientPlayIcon, playIconLp);
+        LinearLayout.LayoutParams playButtonLp = lp(24, 24);
+        playButtonLp.topMargin = dp(2);
+        playButtonLp.bottomMargin = dp(4);
+        playRow.addView(ambientPlayButton, playButtonLp);
+        ambientCard.addView(playRow, lp(-1, 36));
+        ambientPlayButton.setOnClickListener(v -> toggleAmbientPlayback());
+        updateAmbientPlayButton();
+
         ambientVolumeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -370,6 +432,8 @@ public class SettingsActivity extends Activity {
             moreAmbient.setText(ambientExpanded ? "عرض أقل" : "عرض المزيد");
         });
 
+        ambientPlayButton.setOnClickListener(v -> toggleAmbientPlayback());
+        updateAmbientPlayButton();
         renderAmbientGrid();
 
         // 3. صوت التنبيه ومستوى التنبيه (مماثل لـ Flocus تماماً وقبل السمة)
