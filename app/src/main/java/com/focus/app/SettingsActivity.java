@@ -84,6 +84,36 @@ public class SettingsActivity extends Activity {
         return "Sparkle";
     }
 
+    public static class AmbientSoundItem {
+        public final String key;
+        public final String name;
+        public final int iconRes;
+        public final int rawRes;
+
+        public AmbientSoundItem(String key, String name, int iconRes, int rawRes) {
+            this.key = key;
+            this.name = name;
+            this.iconRes = iconRes;
+            this.rawRes = rawRes;
+        }
+    }
+
+    public static final AmbientSoundItem[] AMBIENT_ITEMS = new AmbientSoundItem[] {
+            new AmbientSoundItem("rain", "Rain", R.drawable.rain, R.raw.rain),
+            new AmbientSoundItem("light_rain", "Light Rain", R.drawable.light_rain, R.raw.light_rain),
+            new AmbientSoundItem("heavy_rain", "Heavy Rain", R.drawable.heavy_rain, R.raw.heavy_rain),
+            new AmbientSoundItem("light_rain_on_tent", "Light Rain on Tent", R.drawable.light_rain_on_tent, R.raw.light_rain_on_tent),
+            new AmbientSoundItem("thunderstorm", "Thunderstorm", R.drawable.thunderstorm, R.raw.thunderstorm),
+            new AmbientSoundItem("ocean", "Ocean", R.drawable.ocean, R.raw.ocean),
+            new AmbientSoundItem("waterfall", "Waterfall", R.drawable.waterfall, R.raw.waterfall),
+            new AmbientSoundItem("campfire", "Campfire", R.drawable.campfire, R.raw.campfire),
+            new AmbientSoundItem("fireplace", "Fireplace", R.drawable.fireplace, R.raw.fireplace),
+            new AmbientSoundItem("wind", "Wind", R.drawable.wind, R.raw.wind),
+            new AmbientSoundItem("birds_in_the_woods", "Birds in the Woods", R.drawable.birds_in_the_woods, R.raw.birds_in_the_woods),
+            new AmbientSoundItem("summer_night", "Summer Night", R.drawable.summer_night, R.raw.summer_night),
+            new AmbientSoundItem("exam_hall", "Exam Hall", R.drawable.exam_hall, R.raw.exam_hall)
+    };
+
     private SharedPreferences prefs;
     private EditText study, shortBreak, longBreak, cycle;
     private TextView moreThemes;
@@ -91,6 +121,10 @@ public class SettingsActivity extends Activity {
     private boolean expanded;
     private boolean compact;
     private MediaPlayer previewPlayer;
+    private MediaPlayer ambientPlayer;
+    private boolean ambientExpanded;
+    private LinearLayout ambientGrid;
+    private TextView moreAmbient;
 
     private final String[] themeNames = {
             "Golden Glow", "Pink Clouds", "Cozy Corner", "Night City",
@@ -136,6 +170,28 @@ public class SettingsActivity extends Activity {
         Glide.with(this).load(Uri.parse("file:///android_asset/themes/" + file))
                 .apply(decoded(dp(240), dp(140)))
                 .into(target);
+    }
+
+    private void playAmbient(int rawRes) {
+        if (ambientPlayer != null) {
+            try { ambientPlayer.stop(); ambientPlayer.release(); } catch (Exception ignored) {}
+            ambientPlayer = null;
+        }
+        try {
+            ambientPlayer = MediaPlayer.create(this, rawRes);
+            if (ambientPlayer == null) return;
+            float vol = prefs.getFloat("ambient_volume", 0.70f);
+            ambientPlayer.setVolume(vol, vol);
+            ambientPlayer.setLooping(true);
+            ambientPlayer.start();
+        } catch (Exception ignored) {}
+    }
+
+    private void stopAmbient() {
+        if (ambientPlayer != null) {
+            try { ambientPlayer.stop(); ambientPlayer.release(); } catch (Exception ignored) {}
+            ambientPlayer = null;
+        }
     }
 
     private void playAlertPreview(int rawRes) {
@@ -241,6 +297,80 @@ public class SettingsActivity extends Activity {
         addSwitch(auto, "من المذاكرة إلى الاستراحة القصيرة", "auto_short");
         addSwitch(auto, "من الاستراحة القصيرة إلى المذاكرة", "auto_study");
         addSwitch(auto, "من الاستراحة الطويلة إلى المذاكرة", "auto_long");
+
+        // 2.5 بطاقة أجواء (قبل بطاقة صوت التنبيه)
+        LinearLayout ambientCard = card(page);
+
+        LinearLayout ambHeader = horizontal();
+        ambHeader.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        ambHeader.setGravity(Gravity.CENTER_VERTICAL);
+
+        SeekBar ambientVolumeBar = new SeekBar(this);
+        ambientVolumeBar.setMax(100);
+        int currentAmbientVol = prefs.getInt("ambient_volume_percent", 70);
+        ambientVolumeBar.setProgress(currentAmbientVol);
+        if (Build.VERSION.SDK_INT >= 21) {
+            ambientVolumeBar.setProgressTintList(ColorStateList.valueOf(c("#7432FF")));
+            ambientVolumeBar.setProgressBackgroundTintList(ColorStateList.valueOf(Color.argb(90, 110, 110, 150)));
+            ambientVolumeBar.setThumbTintList(ColorStateList.valueOf(Color.WHITE));
+        }
+        LinearLayout.LayoutParams ambVolLp = new LinearLayout.LayoutParams(dp(compact ? 120 : 140), dp(32));
+        ambHeader.addView(ambientVolumeBar, ambVolLp);
+
+        View ambSpacer = new View(this);
+        ambHeader.addView(ambSpacer, new LinearLayout.LayoutParams(0, 0, 1));
+
+        TextView ambTitle = txt("أجواء", compact ? 16 : 18, "#FFFFFF", true);
+        ambTitle.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        ambHeader.addView(ambTitle);
+
+        ImageView ambIcon = new ImageView(this);
+        ambIcon.setImageResource(R.drawable.rain);
+        LinearLayout.LayoutParams aip = lp(24, 24);
+        aip.leftMargin = dp(8);
+        ambHeader.addView(ambIcon, aip);
+
+        ambientCard.addView(ambHeader, lp(-1, 38));
+
+        ambientVolumeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    float vol = Math.max(0.01f, progress / 100f);
+                    prefs.edit().putInt("ambient_volume_percent", progress)
+                            .putFloat("ambient_volume", vol).apply();
+                    if (ambientPlayer != null) {
+                        try {
+                            ambientPlayer.setVolume(vol, vol);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        ambientGrid = vertical();
+        LinearLayout.LayoutParams agp = lp(-1, -2);
+        agp.topMargin = dp(8);
+        ambientCard.addView(ambientGrid, agp);
+
+        moreAmbient = txt("عرض المزيد", 16, "#FFFFFF", true);
+        moreAmbient.setGravity(Gravity.CENTER);
+        moreAmbient.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_chevron_down, 0, 0, 0);
+        moreAmbient.setCompoundDrawablePadding(dp(8));
+        moreAmbient.setBackground(rounded(c("#6252D0"), 26, 0));
+        LinearLayout.LayoutParams amp = lp(-1, 46);
+        amp.topMargin = dp(10);
+        ambientCard.addView(moreAmbient, amp);
+
+        moreAmbient.setOnClickListener(v -> {
+            ambientExpanded = !ambientExpanded;
+            renderAmbientGrid();
+            moreAmbient.setText(ambientExpanded ? "عرض أقل" : "عرض المزيد");
+        });
+
+        renderAmbientGrid();
 
         // 3. صوت التنبيه ومستوى التنبيه (مماثل لـ Flocus تماماً وقبل السمة)
         LinearLayout alertCard = card(page);
@@ -775,6 +905,83 @@ public class SettingsActivity extends Activity {
         return v;
     }
 
+    private void renderAmbientGrid() {
+        if (ambientGrid == null) return;
+        ambientGrid.removeAllViews();
+        String activeKey = prefs.getString("ambient_sound_key", "");
+        int max = ambientExpanded ? AMBIENT_ITEMS.length : 2;
+
+        for (int i = 0; i < max; i += 2) {
+            LinearLayout row = horizontal();
+            row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            LinearLayout.LayoutParams rp = lp(-1, -2);
+            rp.topMargin = dp(i == 0 ? 0 : 8);
+
+            AmbientSoundItem item1 = AMBIENT_ITEMS[i];
+            View tile1 = createAmbientTile(item1, item1.key.equals(activeKey));
+            row.addView(tile1, new LinearLayout.LayoutParams(0, dp(100), 1));
+
+            View spacer = new View(this);
+            row.addView(spacer, lp(8, 100));
+
+            if (i + 1 < max) {
+                AmbientSoundItem item2 = AMBIENT_ITEMS[i + 1];
+                View tile2 = createAmbientTile(item2, item2.key.equals(activeKey));
+                row.addView(tile2, new LinearLayout.LayoutParams(0, dp(100), 1));
+            } else {
+                View empty = new View(this);
+                row.addView(empty, new LinearLayout.LayoutParams(0, dp(100), 1));
+            }
+            ambientGrid.addView(row, rp);
+        }
+    }
+
+    private View createAmbientTile(AmbientSoundItem item, boolean isSelected) {
+        LinearLayout tile = vertical();
+        tile.setGravity(Gravity.CENTER);
+        tile.setPadding(dp(6), dp(10), dp(6), dp(10));
+
+        GradientDrawable gd = new GradientDrawable();
+        if (isSelected) {
+            gd.setColor(Color.argb(125, 81, 70, 216));
+            gd.setCornerRadius(dp(16));
+            gd.setStroke(dp(2), Color.parseColor("#A88BFF"));
+        } else {
+            gd.setColor(Color.argb(85, 20, 20, 38));
+            gd.setCornerRadius(dp(16));
+            gd.setStroke(dp(1), Color.argb(45, 255, 255, 255));
+        }
+        tile.setBackground(gd);
+
+        ImageView iconView = new ImageView(this);
+        iconView.setImageResource(item.iconRes);
+        iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams iip = lp(40, 40);
+        iip.bottomMargin = dp(8);
+        tile.addView(iconView, iip);
+
+        TextView nameView = txt(item.name, compact ? 12 : 13, isSelected ? "#A88BFF" : "#FFFFFF", true);
+        nameView.setGravity(Gravity.CENTER);
+        nameView.setSingleLine(true);
+        tile.addView(nameView);
+
+        tile.setOnClickListener(v -> {
+            String active = prefs.getString("ambient_sound_key", "");
+            if (item.key.equals(active)) {
+                prefs.edit().putString("ambient_sound_key", "").apply();
+                stopAmbient();
+                Toast.makeText(this, "تم إيقاف صوت " + item.name, Toast.LENGTH_SHORT).show();
+            } else {
+                prefs.edit().putString("ambient_sound_key", item.key).apply();
+                playAmbient(item.rawRes);
+                Toast.makeText(this, "تم تشغيل صوت " + item.name, Toast.LENGTH_SHORT).show();
+            }
+            renderAmbientGrid();
+        });
+
+        return tile;
+    }
+
     private LinearLayout horizontal() {
         LinearLayout l = new LinearLayout(this);
         l.setOrientation(LinearLayout.HORIZONTAL);
@@ -801,6 +1008,10 @@ public class SettingsActivity extends Activity {
         if (previewPlayer != null) {
             try { previewPlayer.stop(); previewPlayer.release(); } catch (Exception ignored) {}
             previewPlayer = null;
+        }
+        if (ambientPlayer != null) {
+            try { ambientPlayer.stop(); ambientPlayer.release(); } catch (Exception ignored) {}
+            ambientPlayer = null;
         }
         super.onDestroy();
     }
