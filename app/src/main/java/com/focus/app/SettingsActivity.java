@@ -204,34 +204,35 @@ public class SettingsActivity extends Activity {
             Toast.makeText(this, "اختر صوتاً أولاً", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (ambientPlayer != null && ambientPlayer.isPlaying()) {
-            try { ambientPlayer.pause(); } catch (Exception ignored) {}
-            updateAmbientPlayButton();
-            return;
-        }
-        if (ambientPlayer != null) {
-            try {
-                ambientPlayer.start();
-                updateAmbientPlayButton();
-                return;
-            } catch (Exception ignored) {
+
+        boolean enabled = prefs.getBoolean("ambient_play_enabled", false);
+        if (enabled) {
+            prefs.edit().putBoolean("ambient_play_enabled", false).apply();
+            stopAmbient();
+        } else {
+            prefs.edit().putBoolean("ambient_play_enabled", true).apply();
+            boolean timerRunning = prefs.getBoolean("running", false);
+            if (!timerRunning) {
+                for (AmbientSoundItem item : AMBIENT_ITEMS) {
+                    if (item.key.equals(selectedKey)) {
+                        playAmbient(item.rawRes);
+                        break;
+                    }
+                }
+            } else {
+                // TimerService owns playback during a running session.
                 stopAmbient();
             }
         }
-        for (AmbientSoundItem item : AMBIENT_ITEMS) {
-            if (item.key.equals(selectedKey)) {
-                playAmbient(item.rawRes);
-                return;
-            }
-        }
+        updateAmbientPlayButton();
     }
 
     private void updateAmbientPlayButton() {
         if (ambientPlayIcon == null || ambientPlayButton == null) return;
-        boolean playing = ambientPlayer != null && ambientPlayer.isPlaying();
-        ambientPlayIcon.setImageResource(playing ? R.drawable.ic_pause : R.drawable.ic_play);
+        boolean enabled = prefs != null && prefs.getBoolean("ambient_play_enabled", false);
+        ambientPlayIcon.setImageResource(enabled ? R.drawable.ic_pause : R.drawable.ic_play);
         ambientPlayIcon.setColorFilter(Color.WHITE);
-        ambientPlayButton.setContentDescription(playing ? "إيقاف الأصوات المحيطة مؤقتاً" : "تشغيل الأصوات المحيطة");
+        ambientPlayButton.setContentDescription(enabled ? "إيقاف الأصوات المحيطة" : "تشغيل الأصوات المحيطة");
     }
 
     private void playAlertPreview(int rawRes) {
@@ -1031,15 +1032,20 @@ public class SettingsActivity extends Activity {
 
         tile.setOnClickListener(v -> {
             String active = prefs.getString("ambient_sound_key", "");
+            boolean enabled = prefs.getBoolean("ambient_play_enabled", false);
             if (item.key.equals(active)) {
-                prefs.edit().putString("ambient_sound_key", "").apply();
+                prefs.edit().putString("ambient_sound_key", "")
+                        .putBoolean("ambient_play_enabled", false).apply();
                 stopAmbient();
-                Toast.makeText(this, "تم إيقاف صوت " + item.name, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "تم إلغاء اختيار " + item.name, Toast.LENGTH_SHORT).show();
             } else {
                 prefs.edit().putString("ambient_sound_key", item.key).apply();
-                playAmbient(item.rawRes);
-                Toast.makeText(this, "تم تشغيل صوت " + item.name, Toast.LENGTH_SHORT).show();
+                boolean timerRunning = prefs.getBoolean("running", false);
+                if (enabled && !timerRunning) playAmbient(item.rawRes);
+                else stopAmbient();
+                Toast.makeText(this, "تم اختيار " + item.name, Toast.LENGTH_SHORT).show();
             }
+            updateAmbientPlayButton();
             renderAmbientGrid();
         });
 
