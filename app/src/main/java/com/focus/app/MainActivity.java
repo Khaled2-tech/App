@@ -451,7 +451,9 @@ public class MainActivity extends Activity {
         if (running) {
             long left = Math.max(0, prefs.getLong("end_at", System.currentTimeMillis()) - System.currentTimeMillis());
             prefs.edit().putBoolean("running", false).putLong("remaining_ms", left).apply();
-            stopService(new Intent(this, TimerService.class));
+            Intent pauseIntent = new Intent(this, TimerService.class);
+            pauseIntent.setAction(TimerService.ACTION_PAUSE);
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(pauseIntent); else startService(pauseIntent);
             running = false;
             stopTicker();
             startButton.setText("استئناف");
