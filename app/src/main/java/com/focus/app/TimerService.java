@@ -23,6 +23,16 @@ public class TimerService extends Service {
     private SharedPreferences prefs;
     private PowerManager.WakeLock wakeLock;
     private MediaPlayer alarmPlayer;
+    private MediaPlayer ambientPlayer;
+    private String activeAmbientKey;
+    private final Runnable ambientStopRunnable = this::stopAmbientPlayback;
+    private final SharedPreferences.OnSharedPreferenceChangeListener ambientPrefsListener = (shared, key) -> {
+        if ("ambient_play_enabled".equals(key) || "ambient_sound_key".equals(key)
+                || "ambient_volume".equals(key) || "running".equals(key) || "phase".equals(key)
+                || "end_at".equals(key)) {
+            handler.post(this::syncAmbientPlayback);
+        }
+    };
     private int currentRepeat;
     private int totalRepeats;
     private boolean finishing;
@@ -41,6 +51,7 @@ public class TimerService extends Service {
     @Override public void onCreate() {
         super.onCreate();
         prefs = getSharedPreferences("focus_prefs", MODE_PRIVATE);
+        prefs.registerOnSharedPreferenceChangeListener(ambientPrefsListener);
         createChannel();
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         if (pm != null) wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "focus:timer");
@@ -51,8 +62,10 @@ public class TimerService extends Service {
         startForeground(10, notification(runningLabel()));
         holdWake();
         handler.removeCallbacks(tick);
-        if (prefs.getBoolean("running", false)) handler.post(tick);
-        else pauseAndStop();
+        if (prefs.getBoolean("running", false)) {
+            syncAmbientPlayback();
+            handler.post(tick);
+        } else pauseAndStop();
         return START_STICKY;
     }
 
@@ -83,6 +96,7 @@ public class TimerService extends Service {
             next = 0;
             advance = prefs.getBoolean("auto_long", true);
         }
+        stopAmbientPlayback();
         long dur = minutesFor(next) * 60000L;
         SharedPreferences.Editor editor = prefs.edit()
                 .putInt("completed_sessions", completed)
@@ -95,6 +109,7 @@ public class TimerService extends Service {
 
         if (advance) {
             editor.putBoolean("running", true).putLong("end_at", System.currentTimeMillis() + dur).apply();
+            syncAmbientPlayback();
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             if (nm != null) nm.notify(10, notification(phaseName(next)));
             finishing = false;
@@ -144,6 +159,90 @@ public class TimerService extends Service {
             default:
                 return R.raw.sparkle;
         }
+    }
+
+
+    private int rawResForAmbientKey(String key) {
+        if (key == null) return 0;
+        switch (key) {
+            case "rain": return R.raw.rain;
+            case "light_rain": return R.raw.light_rain;
+            case "heavy_rain": return R.raw.heavy_rain;
+            case "light_rain_on_tent": return R.raw.light_rain_on_tent;
+            case "thunderstorm": return R.raw.thunderstorm;
+            case "ocean": return R.raw.ocean;
+            case "waterfall": return R.raw.waterfall;
+            case "campfire": return R.raw.campfire;
+            case "fireplace": return R.raw.fireplace;
+            case "wind": return R.raw.wind;
+            case "birds_in_the_woods": return R.raw.birds_in_the_woods;
+            case "summer_night": return R.raw.summer_night;
+            case "exam_hall": return R.raw.exam_hall;
+            default: return 0;
+        }
+    }
+
+    private void syncAmbientPlayback() {
+        if (prefs == null) return;
+        boolean shouldPlay = prefs.getBoolean("running", false)
+                && prefs.getInt("phase", 0) == 0
+                && prefs.getBoolean("ambient_play_enabled", false);
+        String key = prefs.getString("ambient_sound_key", "");
+        int rawRes = rawResForAmbientKey(key);
+        if (!shouldPlay || key.isEmpty() || rawRes == 0) {
+            stopAmbientPlayback();
+            return;
+        }
+
+        if (ambientPlayer == null || !key.equals(activeAmbientKey)) {
+            stopAmbientPlayback();
+            try {
+                ambientPlayer = MediaPlayer.create(getApplicationContext(), rawRes);
+                if (ambientPlayer == null) return;
+                activeAmbientKey = key;
+                ambientPlayer.setLooping(true);
+                float volume = prefs.getFloat("ambient_volume", 0.70f);
+                ambientPlayer.setVolume(volume, volume);
+                ambientPlayer.start();
+            } catch (Exception ignored) {
+                stopAmbientPlayback();
+                return;
+            }
+        } else {
+            try {
+                float volume = prefs.getFloat("ambient_volume", 0.70f);
+                ambientPlayer.setVolume(volume, volume);
+                if (!ambientPlayer.isPlaying()) ambientPlayer.start();
+            } catch (Exception ignored) {
+                stopAmbientPlayback();
+                return;
+            }
+        }
+        scheduleAmbientStop();
+    }
+
+    private void scheduleAmbientStop() {
+        handler.removeCallbacks(ambientStopRunnable);
+        if (prefs == null || ambientPlayer == null) return;
+        long stopAt = prefs.getLong("end_at", 0L) - 1000L;
+        long delay = stopAt - System.currentTimeMillis();
+        if (delay <= 0) {
+            stopAmbientPlayback();
+        } else {
+            handler.postDelayed(ambientStopRunnable, delay);
+        }
+    }
+
+    private void stopAmbientPlayback() {
+        handler.removeCallbacks(ambientStopRunnable);
+        if (ambientPlayer != null) {
+            try {
+                if (ambientPlayer.isPlaying()) ambientPlayer.stop();
+                ambientPlayer.release();
+            } catch (Exception ignored) {}
+            ambientPlayer = null;
+        }
+        activeAmbientKey = null;
     }
 
     private void playAlarmForPhase(int endedPhase) {
@@ -208,6 +307,7 @@ public class TimerService extends Service {
 
     private void pauseAndStop() {
         handler.removeCallbacks(tick);
+        stopAmbientPlayback();
         stopAlarm();
         releaseWake();
         try { stopForeground(true); } catch (Exception ignored) {}
@@ -242,6 +342,8 @@ public class TimerService extends Service {
 
     @Override public void onDestroy() {
         handler.removeCallbacks(tick);
+        if (prefs != null) prefs.unregisterOnSharedPreferenceChangeListener(ambientPrefsListener);
+        stopAmbientPlayback();
         stopAlarm();
         releaseWake();
         super.onDestroy();
